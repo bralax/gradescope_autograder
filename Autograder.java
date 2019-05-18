@@ -18,6 +18,7 @@ import java.io.FileNotFoundException;
 import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -79,7 +80,7 @@ public class Autograder extends RunListener {
     * @param programName the program name
     * @return whether or not the source exists
     */
-   public boolean testSourceExists(String programName, int score) {
+   public boolean testSourceExists(String programName, double score) {
       boolean sourceExists = false;
    
       File source;
@@ -201,7 +202,7 @@ public class Autograder extends RunListener {
       @param p the program to do diff tests on
       @param sampleFile true if using a sample program false if just comparing to a file.
    */
-   public void diffTests(String name, double count, boolean sampleFile, int score) {
+   public void diffTests(String name, double score, double count, boolean sampleFile) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       for (int i = 0; i < count; i++) {
@@ -230,7 +231,8 @@ public class Autograder extends RunListener {
                Process sampleProcess = pbSample.start();
                sampleProcess.waitFor();
             }
-            System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(acOut))));
+            PrintStream out = new PrintStream(new FileOutputStream(acOut));
+            System.setOut(out);
             System.setIn(new FileInputStream(input));
             Class<?> act = Class.forName(name);
             if (act == null) {
@@ -240,7 +242,11 @@ public class Autograder extends RunListener {
             if (main == null) {
                throw new NoSuchMethodException();
             }
-            main.invoke(null);
+            String[] strings = new String[0];
+            main.invoke(null, ((Object)strings));
+            out.flush();
+            out.close();
+            System.setOut(originalOut);
             String[] procDiff = {"diff", exOut, acOut, "-y", 
                                  "--width=175", "-t" };
             ProcessBuilder pbDiff = new ProcessBuilder(procDiff);
@@ -253,7 +259,7 @@ public class Autograder extends RunListener {
             if (diffProcess.exitValue() == 0) {
                trDiff.setScore(score);
                trDiff.addOutput("SUCCESS: " + name +
-                                  " passed this diff test\n");
+                                  " passed this diff test");
             }
             else { 
                trDiff.setScore(0);
@@ -336,15 +342,16 @@ public class Autograder extends RunListener {
                trComp.setScore(score);
                trComp.addOutput("SUCCESS: Method - "
                                 + m.getName() + 
-                                " Returned the correct output of: " + 
-                                ret + " On Inputs: \n");
+                                " \n" + "Returned the correct output of: " + 
+                                ret + "\n" + "On Inputs: \n");
 
             } else {
                trComp.setScore(0);
                trComp.addOutput("FALIURE: Method - "
                                 + m.getName() + 
-                                " Returned the incorrect output of: " + 
-                                t + " instead of " + ret + " On Inputs: \n");
+                                "\n" + "Returned the incorrect output of: " + 
+                                t + " \n" + "Instead of: " + ret + 
+                                "\n" + "On Inputs: \n");
             }
             for (Object arg: args) {
                trComp.addOutput("" + arg + "\n");
@@ -381,6 +388,7 @@ public class Autograder extends RunListener {
             trComp.addOutput("ERROR: Method - " + 
                              m.getName() + "Does not exist");
       }
+      this.allTestResults.add(trComp);
    }
 
 
@@ -410,6 +418,50 @@ public class Autograder extends RunListener {
       }
       return null;
 
+   }
+
+   public void  hasMethodTest(String programName,
+                              int score,
+                              String methodName, 
+                              String[] argTypes) {
+      TestResult trHas = new TestResult("Method Exists Test " + methodName,
+                                         "" + this.diffNum,
+                                         score, "hidden");;
+      Class<?> args[] = getClasses(argTypes);
+      if (args != null) {
+         try {
+            Class<?> c = Class.forName(programName);
+            if (c == null) {
+               trHas.setScore(0);
+               trHas.addOutput("ERROR: Class - " + programName 
+                               + " does not exist");
+            } else {
+               Method m = c.getMethod(methodName, args);
+               if (m == null) {
+                  throw new NoSuchMethodException();
+               }
+               trHas.setScore(score);
+               trHas.addOutput("SUCCESS: Class - " + programName
+                               + "\nHas a method named: "+ methodName
+                               + "\nWith input parameters:\n");
+               for (String arg : argTypes) {
+                  trHas.addOutput(arg +"\n");
+               }
+            }
+         } catch(Exception e) {
+            trHas.setScore(score);
+            trHas.addOutput("ERROR: Class - " + programName
+                            + "\nDoes not have a method named: "+ methodName
+                            + "\nWith input parameters:\n");
+            for (String arg : argTypes) {
+               trHas.addOutput(arg +"\n");
+            }
+         }
+      } else {
+         trHas.setScore(0);
+         trHas.addOutput("ERROR: Unable to convert input parameters");
+      }
+      this.allTestResults.add(trHas);
    }
 
    public static Class<?>[] getClasses(String[] args) {
@@ -591,11 +643,11 @@ public class Autograder extends RunListener {
                trMethodCount.setScore(0);
                trMethodCount.addOutput("Faliure: Class " 
                                        + programName +
-                                       " has unexpected public methods!");
+                                       " has unexpected methods!");
             } else {
                trMethodCount.setScore(score);
                trMethodCount.addOutput("SUCCESS: Class " + programName +
-                                       " has the correct number of  methods!");
+                                       " has the correct number of methods!");
                passed = true;
             }
          }
@@ -609,7 +661,54 @@ public class Autograder extends RunListener {
       return passed;
    }
 
-
+/**
+      Runs a test to make sure that the student submitted enough methods.
+      @param programName the name of the java class
+      @param quantity the number of methods the class needs
+      @return whether the class has enough methods
+    */
+   public boolean testConstructorCount(String programName, double score, Integer quantity) {
+      boolean passed = false;
+      TestResult trMethodCount = new TestResult(programName + " Method Count", 
+                                                "" + this.diffNum , score, "hidden");
+      this.diffNum++;
+      try {
+         Class<?> act = Class.forName(programName);
+         if (act == null) {
+            trMethodCount.setScore(0);
+            trMethodCount.addOutput("Faliure: Class " + 
+                                    programName + " could not be found!");
+         } else {
+            int count = 0;
+            Constructor<?>[] methods = act.getConstructors();
+            count = methods.length;
+            
+            if (count < quantity) {
+               trMethodCount.setScore(0);
+               trMethodCount.addOutput("Faliure: Class " 
+                                       + programName +
+                                       " is missing expected constructors!");
+            } else if (count > quantity) {
+               trMethodCount.setScore(0);
+               trMethodCount.addOutput("Faliure: Class " 
+                                       + programName +
+                                       " has unexpected constructors!");
+            } else {
+               trMethodCount.setScore(score);
+               trMethodCount.addOutput("SUCCESS: Class " + programName +
+                                       " has the correct number of constructors!");
+               passed = true;
+            }
+         }
+      } catch (ClassNotFoundException e) {
+         trMethodCount.setScore(0);
+         trMethodCount.addOutput("Faliure: Class " 
+                                 + programName + 
+                                 " could not be found!");
+      }
+      this.allTestResults.add(trMethodCount);
+      return passed;
+   }
    /**
       Runs a test to make sure that the student submitted enough methods.
       @param programName the name of the java class

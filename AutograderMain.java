@@ -1,50 +1,34 @@
 
 public class AutograderMain {
+   
+   private static final double SCORE = 0.1;
    /**
       Main method of the autograder.
       Runs all of the tests
       @param args the files and diff test counts
       @throws Exception When something goes wrong with a test
-    */
+   */
    public static void main(String[] args) throws Exception {
-      
       Autograder gr = new Autograder();
-      if (args.length < 4 || (args.length % 4) != 0) {
+      if (args.length < 3 || (args.length % 3) != 0) {
          System.out.println("Missing Command Line Arguments");
          return;
       }
-      int progCount = args.length / 4;
+      int progCount = args.length / 3;
       Program[] programs = new Program[progCount];
-      boolean error = false;
       for (int i = 0; i < programs.length; i++) {
-         programs[i] = new Program(args[4 * i], args[4 * i + 2], args[4 * i + 3], args[4 * i + 1]);
-         if (programs[i].userWritten()) {
-            programs[i].setExists(gr.testSourceExists(programs[i].name()));
-            if (!programs[i].exists()) {
-               error = true;
-            }
+         programs[i] = new Program(args[3 * i], args[3 * i + 1], args[3 * i + 2], "01");
+         if (!gr.testSourceExists(programs[i].name(), SCORE) ||
+             !gr.testCompiles(programs[i].name(), true, SCORE)) {
+            programs[i].setExists(false);
+         } else {
+            gr.testCheckstyle(programs[i].name(), SCORE);
          }
       }
-      if (!error) {
-         for (int i = 0; i < programs.length; i++) {
-            boolean comps = !gr.testCompiles(programs[i].name(), programs[i].userWritten());
-            error = error || comps;
-            if (error) {
-               programs[i].setExists(comps);
-            } else if (programs[i].userWritten()){
-               gr.testCheckstyle(programs[i].name());
-               gr.testMethodCount(programs[i].name(), programs[i].unitCount());
-               gr.testPublicInstanceVariables(programs[i].name());
-            }
-         }
-      }
-
-      for(int i = 0; i < programs.length; i++) {
-         if(programs[i].exists() && !error) {
-            if (programs[i].hasJunits()) {
-               gr.junitTests(programs[i]);
-            }
-            gr.diffTests(programs[i]);
+      for (int i = 0; i < programs.length; i++) {
+         if (programs[i].exists()) {
+            gr.diffTests(programs[i].name(), SCORE, programs[i].testCount(), true);
+            gr.comparisonTests(programs[i].name(), SCORE, programs[i].unitCount(), null);
          }
       }
       gr.testRunFinished();
