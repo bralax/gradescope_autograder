@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+##########################################################
+# Autograder script for 500.112, Gateway Computing: Java #
+##########################################################
+
+# If script is passed parameter "local", runs the script locally
+where_to_run=$1
+
+# Setting folder variables
+src_files=/autograder/source/
+subm_files=/autograder/submission/
+results=/autograder/results/
+
+# make it local
+if [ "$where_to_run" == "local" ]
+then
+    src_files="./"
+    subm_files="./"
+    results="./"
+else 
+    remove_files
+fi
+
+prgs=('Piece' 'Cell' 'Move' 'ImPiece' 'MPiece' 'Board' 'RuleKeeper' 'Main')
+writ=(0 0 0 0 3 3 3 0)
+############
+# Clean up #
+############
+echo 'Removing files we will generate, just in case'
+
+
+# need to do a bit of back and forth due to local filesystem
+if [ "$where_to_run" != "local" ]
+then
+    cd $src_files
+fi
+
+# Copy student code into folder where we'll execute it
+for i in ${prgs[@]}
+do
+    cp ${subm_files}${i}.java $src_files
+done
+
+go_there
+
+#####################################
+# Compile sample code               #
+#####################################
+echo "COMPILING AUTOGRADER CODE..."
+javac -classpath junit/junit-4.13-beta-2.jar:. AutograderMain.java
+come_back
+
+
+######################
+# Create JSON output #
+######################
+echo ''
+echo 'Now creating JSON output'
+
+json_prg="AutograderMain"
+rslt_folder=$results
+
+# Note in the local case, the result folder is in the source file
+if [ "$where_to_run" == "local" ]
+then
+    cd $src_files
+    rslt_folder="results/"
+fi
+    java -classpath junit/junit-4.13-beta-2.jar:junit/hamcrest-2.1.jar:. $json_prg ${prgs[0]} ${writ[0]} 0 0  ${prgs[1]} ${writ[1]} 0 0  ${prgs[2]} ${writ[2]} 0 0  ${prgs[3]} ${writ[3]} 0 0  ${prgs[4]} ${writ[4]} 0 3  ${prgs[5]} ${writ[5]} 0 12  ${prgs[6]} ${writ[6]} 0 5  ${prgs[7]} ${writ[7]} 1 0 > ${rslt_folder}results.json
+    rm *.out
+echo ''
+echo 'Autograder script ended'
+
+# If we're running around locally and need to jump around
+function come_back {
+    if [ "$where_to_run" == "local" ]
+    then
+        cd ..
+        cd ..
+    fi
+}
+
+# If we're running around locally and need to jump around
+function go_there {
+    if [ "$where_to_run" == "local" ]
+    then
+        cd $src_files
+    fi
+}
+
+function remove_files {
+    echo ''
+    rm -f ${results}results.json
+
+    for i in "${prgs[@]}"
+    do
+        rm -f ${src_files}${i}.class
+        rm -f ${src_files}${i}.out
+    done
+}
