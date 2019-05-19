@@ -13,12 +13,14 @@ public class Listener extends RunListener {
    private int unitNum;
    private double maxScore;
    private String name;
+   private String visibility;
 
-   public Listener(double max, int unit, String program) {
+   public Listener(double max, int unit, String program, String visible) {
       this.allResults = new ArrayList<TestResult>();
       this.maxScore = max;
       this.unitNum = unit;
       this.name = program;
+      this.visibility = visible;
    }
 
    @Override
@@ -35,7 +37,7 @@ public class Listener extends RunListener {
       
       this.current = new TestResult(this.name + ": " +
                                     description.getMethodName(), 
-                                    "" + this.unitNum, this.maxScore, "hidden");
+                                    "" + this.unitNum, this.maxScore, this.visibility);
       this.current.setScore(this.maxScore);
    }
 

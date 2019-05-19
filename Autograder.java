@@ -41,11 +41,13 @@ public class Autograder extends RunListener {
    private TestResult currentJunitTestResult;
 
    /** The value of each test.*/
-   private final double maxScore = 0.0;
+   private double maxScore;
    
    /**The current test number we are on.*/
    protected int diffNum;
-   
+
+
+   private String visibility;
    /**
       The main class constructor.
       Initializes the list of all tests.
@@ -53,6 +55,8 @@ public class Autograder extends RunListener {
    public Autograder() {
       this.allTestResults = new ArrayList<TestResult>();
       this.diffNum = 1;
+      this.visibility = "hidden";
+      this.maxScore = 0.1;
    }
 
    public void addTestResult(TestResult t) {
@@ -80,7 +84,7 @@ public class Autograder extends RunListener {
     * @param programName the program name
     * @return whether or not the source exists
     */
-   public boolean testSourceExists(String programName, double score) {
+   public boolean testSourceExists(String programName) {
       boolean sourceExists = false;
    
       File source;
@@ -92,8 +96,8 @@ public class Autograder extends RunListener {
       TestResult trSourceFile = new TestResult(programName +
                                                " Source File Exists", 
                                                "Pre-Test",
-                                               score, 
-                                               "visible");
+                                               this.maxScore, 
+                                               this.visibility);
       
       if (!source.exists() || source.isDirectory()) { // source not present
          trSourceFile.setScore(0);
@@ -101,7 +105,7 @@ public class Autograder extends RunListener {
                                  ".java is not present!\n");
          trSourceFile.addOutput("\tCheck the spelling of your file name.\n");
       } else { // source present
-         trSourceFile.setScore(score);
+         trSourceFile.setScore(this.maxScore);
          trSourceFile.addOutput("SUCCESS: file " + programName +
                                  ".java is present!\n");
          sourceExists = true;
@@ -119,12 +123,12 @@ public class Autograder extends RunListener {
    /** Function to test if a class compiles.
        @param programName the name of the java file to tes       @return whether the class compiled
     */
-   public boolean testCompiles(String programName, boolean save, double score) {
+   public boolean testCompiles(String programName, boolean save) {
       boolean passed = false;
       //File source = new File(programName + ".class");
       TestResult trCompilation = new TestResult(programName + " Compiles",
-                                                 "Pre-Test", score,
-                                                "hidden");
+                                                 "Pre-Test", this.maxScore,
+                                                this.visibility);
       String fileName = programName + ".java";
       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
       ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -141,7 +145,7 @@ public class Autograder extends RunListener {
 
       } 
       else {
-         trCompilation.setScore(score);
+         trCompilation.setScore(this.maxScore);
          trCompilation.addOutput("SUCCESS: " + programName + 
                                   ".java compiled successfully!\n");
          passed = true;
@@ -157,10 +161,10 @@ public class Autograder extends RunListener {
     * Checks if checkstyle passed.
     * @param programName the program name
     */
-   public void testCheckstyle(String programName, double score) {
+   public void testCheckstyle(String programName) {
       TestResult trCheck = new TestResult(programName + "Checkstyle Compliant",
                                           "Pre-Test",
-                                           score, "hidden");
+                                           this.maxScore, this.visibility);
       String checkstyle = "/autograder/source/checkstyle/";
       
       String result;
@@ -174,7 +178,7 @@ public class Autograder extends RunListener {
          result = s.hasNext() ? s.next() : "";
          //no problems reported in checkstylefile; it passed checkstyle
          if (result.equals("Starting audit...\nAudit done.\n")) {
-            trCheck.setScore(score);
+            trCheck.setScore(this.maxScore);
             trCheck.addOutput("SUCCESS: " + programName +
                                " passed checkstyle with no warnings\n");
          }
@@ -195,6 +199,15 @@ public class Autograder extends RunListener {
 
    
 
+   /**
+      Runs a all the diff tests for a specific file.
+      All input files are named: {Program_Name}_Test_#.in
+      @param p the program to do diff tests on
+      @param sampleFile true if using a sample program false if just comparing to a file.
+   */
+   public void diffTests(String name, int count, boolean sampleFile) {
+      this.diffTests(name, count, sampleFile, count);
+   }
 
    /**
       Runs a all the diff tests for a specific file.
@@ -202,17 +215,13 @@ public class Autograder extends RunListener {
       @param p the program to do diff tests on
       @param sampleFile true if using a sample program false if just comparing to a file.
    */
-   public void diffTests(String name, double score, double count, boolean sampleFile) {
+   public void diffTests(String name, int count, boolean sampleFile, int numVisible) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       for (int i = 0; i < count; i++) {
-         String visible = "hidden";
-         if (i == 0) {
-            visible = "hidden";
-         }
          TestResult trDiff = new TestResult(name + " Diff Test #" + i,
                                             "" + this.diffNum,
-                                            score, visible);
+                                            this.maxScore, this.visibility);
          this.diffNum++;
          String input = name + "_Diff_" + i + ".in";
          String exOut = name + "_expected_" + i + ".out";
@@ -257,7 +266,7 @@ public class Autograder extends RunListener {
             result = s.hasNext() ? s.next() : "";
             
             if (diffProcess.exitValue() == 0) {
-               trDiff.setScore(score);
+               trDiff.setScore(this.maxScore);
                trDiff.addOutput("SUCCESS: " + name +
                                   " passed this diff test");
             }
@@ -310,36 +319,36 @@ public class Autograder extends RunListener {
       }
    }
 
-   public void compTest(String programName, double score,  Method m, int ret, Object caller, Object... args) {
+   public void compTest(String programName,  Method m, int ret, Object caller, Object... args) {
       Integer i = ret;
-      this.compTest(programName, score, m, i, caller, args);
+      this.compTest(programName, m, i, caller, args);
    }
 
-   public void compTest(String programName, double score, Method m, boolean ret, Object caller, Object... args) {
+   public void compTest(String programName, Method m, boolean ret, Object caller, Object... args) {
       Boolean i = ret;
-      this.compTest(programName, score, m, i, caller, args);
+      this.compTest(programName, m, i, caller, args);
    }
 
-   public void compTest(String programName, double score, Method m, char ret, Object caller, Object... args) {
+   public void compTest(String programName, Method m, char ret, Object caller, Object... args) {
       Character i = ret;
-      this.compTest(programName, score, m, i, caller, args);
+      this.compTest(programName, m, i, caller, args);
    }
 
-   public void compTest(String programName, double score, Method m, double ret, Object caller, Object... args) {
+   public void compTest(String programName, Method m, double ret, Object caller, Object... args) {
       Double i = ret;
-      this.compTest(programName, score, m, i, caller, args);
+      this.compTest(programName, m, i, caller, args);
    }
 
-   public void compTest(String programName, double score, Method m, Object ret, Object caller, Object... args) {
+   public void compTest(String programName, Method m, Object ret, Object caller, Object... args) {
       TestResult trComp = new TestResult(programName + " Unit Test # " + this.diffNum,
                                          "" + this.diffNum,
-                                         score, "hidden");
+                                         this.maxScore, this.visibility);
       this.diffNum++;
       if (m != null) {
          try {
             Object t = m.invoke(caller, args);
             if (t.equals(ret)) {
-               trComp.setScore(score);
+               trComp.setScore(this.maxScore);
                trComp.addOutput("SUCCESS: Method - "
                                 + m.getName() + 
                                 " \n" + "Returned the correct output of: " + 
@@ -421,12 +430,11 @@ public class Autograder extends RunListener {
    }
 
    public void  hasMethodTest(String programName,
-                              int score,
                               String methodName, 
                               String[] argTypes) {
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
-                                         score, "hidden");;
+                                         this.maxScore, this.visibility);
       Class<?> args[] = getClasses(argTypes);
       if (args != null) {
          try {
@@ -440,7 +448,7 @@ public class Autograder extends RunListener {
                if (m == null) {
                   throw new NoSuchMethodException();
                }
-               trHas.setScore(score);
+               trHas.setScore(this.maxScore);
                trHas.addOutput("SUCCESS: Class - " + programName
                                + "\nHas a method named: "+ methodName
                                + "\nWith input parameters:\n");
@@ -449,7 +457,7 @@ public class Autograder extends RunListener {
                }
             }
          } catch(Exception e) {
-            trHas.setScore(score);
+            trHas.setScore(0);
             trHas.addOutput("ERROR: Class - " + programName
                             + "\nDoes not have a method named: "+ methodName
                             + "\nWith input parameters:\n");
@@ -502,7 +510,7 @@ public class Autograder extends RunListener {
       @param programName the program to do comparison tests on
       @param testCount the number of tests to perform
    */
-   public void comparisonTests(String programName, double score, int testCount, Object caller) {
+   public void comparisonTests(String programName, int testCount, Object caller) {
       PrintStream original = System.out;
       System.setOut(new PrintStream(
          new OutputStream() {
@@ -557,7 +565,7 @@ public class Autograder extends RunListener {
          } catch (Exception e) {
             //Do nothing
          }
-         this.compTest(programName, score, m, out, caller, args);
+         this.compTest(programName, m, out, caller, args);
       }
       System.setOut(original);
    }
@@ -567,7 +575,7 @@ public class Autograder extends RunListener {
    /**
 
     */
-   public void junitTests(String programName, double score) {
+   public void junitTests(String programName) {
       PrintStream original = System.out;
       System.setOut(new PrintStream(
          new OutputStream() {
@@ -582,7 +590,7 @@ public class Autograder extends RunListener {
          try {
             Class<?> clss = Class.forName(programName +"Tests");
             JUnitCore junit = new JUnitCore();
-            Listener listen = new Listener(score, this.diffNum, programName);
+            Listener listen = new Listener(this.maxScore, this.diffNum, programName, this.visibility);
             junit.addListener(listen);
             junit.run(clss);
             this.allTestResults.addAll(listen.allResults());
@@ -604,10 +612,10 @@ public class Autograder extends RunListener {
       @param quantity the number of methods the class needs
       @return whether the class has enough methods
     */
-   public boolean testMethodCount(String programName, double score, Integer quantity, int modifiers, boolean modify) {
+   public boolean testMethodCount(String programName, Integer quantity, int modifiers, boolean modify) {
       boolean passed = false;
       TestResult trMethodCount = new TestResult(programName + " Method Count", 
-                                                "" + this.diffNum , score, "hidden");
+                                                "" + this.diffNum , this.maxScore, this.visibility);
       this.diffNum++;
       try {
          Class<?> act = Class.forName(programName);
@@ -645,7 +653,7 @@ public class Autograder extends RunListener {
                                        + programName +
                                        " has unexpected methods!");
             } else {
-               trMethodCount.setScore(score);
+               trMethodCount.setScore(this.maxScore);
                trMethodCount.addOutput("SUCCESS: Class " + programName +
                                        " has the correct number of methods!");
                passed = true;
@@ -667,10 +675,10 @@ public class Autograder extends RunListener {
       @param quantity the number of methods the class needs
       @return whether the class has enough methods
     */
-   public boolean testConstructorCount(String programName, double score, Integer quantity) {
+   public boolean testConstructorCount(String programName, Integer quantity) {
       boolean passed = false;
       TestResult trMethodCount = new TestResult(programName + " Method Count", 
-                                                "" + this.diffNum , score, "hidden");
+                                                "" + this.diffNum , this.maxScore, this.visibility);
       this.diffNum++;
       try {
          Class<?> act = Class.forName(programName);
@@ -694,7 +702,7 @@ public class Autograder extends RunListener {
                                        + programName +
                                        " has unexpected constructors!");
             } else {
-               trMethodCount.setScore(score);
+               trMethodCount.setScore(this.maxScore);
                trMethodCount.addOutput("SUCCESS: Class " + programName +
                                        " has the correct number of constructors!");
                passed = true;
@@ -715,10 +723,10 @@ public class Autograder extends RunListener {
       @param quantity the number of methods the class needs
       @return whether the class has enough methods
     */
-   public boolean testPublicInstanceVariables(String programName, double score) {
+   public boolean testPublicInstanceVariables(String programName) {
       boolean passed = false;
       TestResult trMethodCount = new TestResult(programName + " Check for Public Instance Variables", 
-                                                "" + this.diffNum , score, "hidden");
+                                                "" + this.diffNum , this.maxScore, this.visibility);
       this.diffNum++;
       try {
          Class<?> act = Class.forName(programName);
@@ -757,16 +765,34 @@ public class Autograder extends RunListener {
       return passed;
    }
 
-   public void addTestResult(String name, double totalScore, double score, String extraOutput) {
-      double scoreNum = score;
-      TestResult tr = new TestResult(name, ""+this.diffNum, totalScore, "hidden");
-      tr.setScore(scoreNum);
+   public void addTestResult(String name, boolean success, String extraOutput) {
+      TestResult tr = new TestResult(name, ""+this.diffNum, this.maxScore, this.visibility);
+      tr.setScore((success) ? this.maxScore : 0);
       tr.addOutput(extraOutput);
       this.allTestResults.add(tr);
    }
 
+   public void setVisibility(int choice) {
+      String[] vis = {"visible", "hidden", "after_due_date", "after_published"};
+      if (choice > 3 || choice < 0) {
+         choice = 1;
+      }
+      this.visibility = vis[choice];
+   }
 
+   public String getVisibility() {
+      return this.visibility;
+   }
 
+   public void setScore(double score) {
+      if (score < 0) {
+         score = 0.1;
+      }
+      this.maxScore = score;
+   }
 
+   public double currentScore() {
+      return this.maxScore;
+   }
 
 }
