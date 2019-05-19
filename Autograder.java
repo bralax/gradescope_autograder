@@ -114,7 +114,7 @@ public class Autograder extends RunListener {
       return sourceExists;
    }
 
-   public int Compiler(String fileName) {
+   public int compiler(String fileName) {
       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
       return compiler.run(null, null, null, fileName);
    }
@@ -218,6 +218,9 @@ public class Autograder extends RunListener {
    public void diffTests(String name, int count, boolean sampleFile, int numVisible) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
+      if (sampleFile) {
+         this.compiler(name+"Sample.java");
+      }
       for (int i = 0; i < count; i++) {
          TestResult trDiff = new TestResult(name + " Diff Test #" + i,
                                             "" + this.diffNum,
@@ -518,6 +521,7 @@ public class Autograder extends RunListener {
             
             }
          }));
+      this.compiler(programName+"Sample.java");
       for (int i = 0; i < testCount; i++) {
          String input = programName + "_Comp_" + i + ".in";
          String result;
@@ -584,8 +588,7 @@ public class Autograder extends RunListener {
             }
          }));
       String fileName = programName + "Tests.java";
-      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-      int compilationResult = compiler.run(null, null, null, fileName);
+      int compilationResult = this.compiler(fileName);
       if (compilationResult == 0) {
          try {
             Class<?> clss = Class.forName(programName +"Tests");
