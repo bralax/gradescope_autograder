@@ -31,6 +31,7 @@ import org.junit.runner.JUnitCore;
    Classs representing an autograder.
    It's main method is the running of the autograder
    and instances can be made to store all important information.
+   @author Brandon Lax
 */
 public class Autograder extends RunListener {
 
@@ -49,9 +50,15 @@ public class Autograder extends RunListener {
    /**The visibilty for the current gradescope test.*/
    protected String visibility;
 
+   public static final String CHECKSTYLE_JAR = "/autograder/source/checkstyle/checkstyle-8.10.1-all.jar";
+
+   public static final String CHECKSTYLE_XML = "/autograder/source/checkstyle/check112.xml";
+
    /**
       The Autograder class constructor.
       Initializes the list of all tests.
+      @param visible The visibility of the result to students see {@link #setVisibility(int) setvisibility}
+      @param score The amount of points a test is worth
    */
    public Autograder(int visible, double score) {
       this.allTestResults = new ArrayList<TestResult>();
@@ -63,17 +70,29 @@ public class Autograder extends RunListener {
    /**
       The Autograder class constructor.
       Initializes the list of all tests.
+      Also sets the visibility to hidden and 
+      the score to 0.1
    */
    public Autograder() {
       this(1, 0.1);
    }
-
+   
+   /** Method to add a seperately made test to the results.
+       This allows for people to make child classes of the autograder
+       if they need tests that dont currently exist that they would 
+       prefer to avoid adding to this class. For an example see
+       {@link PictureAutograder}
+       @param t the test to be added to the output
+    */
    public void addTestResult(TestResult t) {
       this.allTestResults.add(t);
    }
    
    
-   /** Code to run at the end of test run. 
+   /** This is the wrap-up code of the autograder.
+       <b>Must be the last line of the main method.</b> It
+       prints all of the results in a JSON format to 
+       standard out.
        @throws Exception fails to create json for a test 
     */
    public void testRunFinished() throws Exception {  
@@ -89,8 +108,10 @@ public class Autograder extends RunListener {
    }
 
    /**
-    * Check if source file exists.
-    * @param programName the program name
+    * Test to check if source file exists.
+    * Will output whether the file exists as well as 
+    * add a junit test for it.
+    * @param programName the program name (can include or not include the .java)
     * @return whether or not the source exists
     */
    public boolean testSourceExists(String programName) {
@@ -123,6 +144,16 @@ public class Autograder extends RunListener {
       return sourceExists;
    }
 
+   /**
+      Method to compile a java file for you.
+      NOTE: <b> This is not a test </b>
+      This just compiles a file. It is useful
+      for when you need a test file but dont want
+      to compile it until you know with certainty
+      that the base file compiles.
+      @param filename The filename of the file to compile
+      @return the int result of the java compiler 0 for success, nonzero otherwise 
+    */
    public int compiler(String fileName) {
       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
       return compiler.run(null, null, null, fileName);
@@ -130,9 +161,12 @@ public class Autograder extends RunListener {
 
 
    /** Function to test if a class compiles.
-       @param programName the name of the java file to tes       @return whether the class compiled
+       Outputs whether the file compiles as well as 
+       adds an additional gradescope test for it.
+       @param programName the name of the java file to test (without the .java) 
+       @return whether the class compiled
     */
-   public boolean testCompiles(String programName, boolean save) {
+   public boolean testCompiles(String programName) {
       boolean passed = false;
       //File source = new File(programName + ".class");
       TestResult trCompilation = new TestResult(programName + " Compiles",
@@ -159,27 +193,35 @@ public class Autograder extends RunListener {
                                   ".java compiled successfully!\n");
          passed = true;
       }
-      if (save) {
-         this.allTestResults.add(trCompilation);
-      }
+      this.allTestResults.add(trCompilation);
       return passed;
    }
    
    
    /**
     * Checks if checkstyle passed.
-    * @param programName the program name
+    * Creates a gradescope test with the
+    * results from checkstyle and gives the 
+    * output to the grader. Relies on having 
+    * the checkstyle files (the jar and xml)
+    * in the location of CHECKSTYLE_JAR and 
+    * CHECKSTYLE_XML. Please change those to 
+    * match the location for your class.
+    * This also assumes that the java files 
+    * is in the source folder of the 
+    * autograder when uploaded to gradescope.
+    * @param programName the java class name (without the .java)
     */
    public void testCheckstyle(String programName) {
       TestResult trCheck = new TestResult(programName + "Checkstyle Compliant",
                                           "Pre-Test",
                                            this.maxScore, this.visibility);
-      String checkstyle = "/autograder/source/checkstyle/";
+      
       
       String result;
       try {
-         String proc = "java -jar " + checkstyle + "checkstyle-8.10.1-all.jar" +
-            " -c " + checkstyle + "check112.xml /autograder/source/" +
+         String proc = "java -jar " + CHECKSTYLE_JAR +
+            " -c " + CHECKSTYLE_XML + " /autograder/source/" +
             programName + ".java";
          Process check = Runtime.getRuntime().exec(proc);
          check.waitFor();  
@@ -210,9 +252,17 @@ public class Autograder extends RunListener {
 
    /**
       Runs a all the diff tests for a specific file.
-      All input files are named: {Program_Name}_Test_#.in
-      @param p the program to do diff tests on
-      @param sampleFile true if using a sample program false if just comparing to a file.
+      This runs count diff tests each one using the naming 
+      convetion on the next line for the name of the input file.
+      All input files are named: {Program_Name}_Diff_#.in
+      The diff test have the option of not using a sample program
+      and instead using already made output files. This approach
+      is good if there is a sample run created.
+      The expected output should be named:
+      {program_Name}_expected_#.out
+      @param name the name of the program to do diff tests on
+      @param count the number of diffs to perform
+      @param sampleFile true if using a sample program false if just comparing to a file. 
    */
    public void diffTests(String name, int count, boolean sampleFile) {
       this.diffTests(name, count, sampleFile, count);
@@ -220,9 +270,20 @@ public class Autograder extends RunListener {
 
    /**
       Runs a all the diff tests for a specific file.
-      All input files are named: {Program_Name}_Test_#.in
-      @param p the program to do diff tests on
+      This runs count diff tests each one using the naming 
+      convetion on the next line for the name of the input file.
+      All input files are named: {Program_Name}_Diff_#.in
+      The diff test have the option of not using a sample program
+      and instead using already made output files. This approach
+      is good if there is a sample run created.
+      The expected output should be named:
+      {program_Name}_expected_#.out
+      This version allows for a certain amount to be forced to be
+      hidden. 
+      @param name the name of the program to do diff tests on
+      @param count the number of diffs to perform
       @param sampleFile true if using a sample program false if just comparing to a file.
+      @param numVisible The number of tests that should not be automatically hidden (count - numVisible) = numHidden
    */
    public void diffTests(String name, int count, boolean sampleFile, int numVisible) {
       PrintStream originalOut = System.out;
@@ -335,26 +396,110 @@ public class Autograder extends RunListener {
       }
    }
 
+   /**
+      Method to do a test comparing the ouptut of the students method against an expected value.
+      Will wrap the int in its object type (Integer) and then call the object version
+      @see #comptest(String, Method, Object, Object, Object...)
+      @param programName the name of the java class to test
+      @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
+      @param ret The expect output from the method
+      @param caller An object the method should be called on (null if a static method)
+      @param args Any arguments that need to be passed into the method, can be an array of objects
+    */
    public void compTest(String programName,  Method m, int ret, Object caller, Object... args) {
       Integer i = ret;
       this.compTest(programName, m, i, caller, args);
    }
 
+   /**
+      Method to do a test comparing the ouptut of the students method against an expected value.
+      Will wrap the boolean in its object type (Boolean) and then call the object version
+      @see #comptest(String, Method, Object, Object, Object...)
+      @param programName the name of the java class to test
+      @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
+      @param ret The expect output from the method
+      @param caller An object the method should be called on (null if a static method)
+      @param args Any arguments that need to be passed into the method, can be an array of objects
+    */
    public void compTest(String programName, Method m, boolean ret, Object caller, Object... args) {
       Boolean i = ret;
       this.compTest(programName, m, i, caller, args);
    }
 
+   /**
+      Method to do a test comparing the ouptut of the students method against an expected value.
+      Will wrap the char in its object type (Character) and then call the object version
+      @see #comptest(String, Method, Object, Object, Object...)
+      @param programName the name of the java class to test
+      @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
+      @param ret The expect output from the method
+      @param caller An object the method should be called on (null if a static method)
+      @param args Any arguments that need to be passed into the method, can be an array of objects
+    */
    public void compTest(String programName, Method m, char ret, Object caller, Object... args) {
       Character i = ret;
       this.compTest(programName, m, i, caller, args);
    }
 
+   /**
+      Method to do a test comparing the ouptut of the students method against an expected value.
+      Will wrap the double in its object type (Double) and then call the object version
+      @see #comptest(String, Method, Object, Object, Object...)
+      @param programName the name of the java class to test
+      @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
+      @param ret The expect output from the method
+      @param caller An object the method should be called on (null if a static method)
+      @param args Any arguments that need to be passed into the method, can be an array of objects
+    */
    public void compTest(String programName, Method m, double ret, Object caller, Object... args) {
       Double i = ret;
       this.compTest(programName, m, i, caller, args);
    }
 
+   /**
+      Method to do a test comparing the ouptut of the students method against an expected value.
+      Will wrap the long in its object type (Long) and then call the object version
+      @see #comptest(String, Method, Object, Object, Object...)
+      @param programName the name of the java class to test
+      @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
+      @param ret The expect output from the method
+      @param caller An object the method should be called on (null if a static method)
+      @param args Any arguments that need to be passed into the method, can be an array of objects
+    */
+   public void compTest(String programName, Method m, long ret, Object caller, Object... args) {
+      Long i = ret;
+      this.compTest(programName, m, i, caller, args);
+   }
+
+   /**
+      Method to do a test comparing the ouptut of the students method against an expected value.
+      Will wrap the float in its object type (Float) and then call the object version
+      @see #comptest(String, Method, Object, Object, Object...)
+      @param programName the name of the java class to test
+      @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
+      @param ret The expect output from the method
+      @param caller An object the method should be called on (null if a static method)
+      @param args Any arguments that need to be passed into the method, can be an array of objects
+    */
+   public void compTest(String programName, Method m, float ret, Object caller, Object... args) {
+      Float i = ret;
+      this.compTest(programName, m, i, caller, args);
+   }
+
+   /**
+      Method to do a test comparing the ouptut of the students method against an expected value.
+      Basically this method runs the students code and calls 
+      .equals() method of the return to compare it to the expected value.
+      It also will work if both methods are supposed to return null.
+      If the method fails or gives the wrong output, the test result
+      will include the information about the method call and potentially 
+      the stack trace if the method crashed.
+      @param programName the name of the java class to test
+      @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
+      @param ret The expect output from the method
+      @param caller An object the method should be called on (null if a static method)
+      @param args Any arguments that need to be passed into the method, can be an array of objects
+    */
    public void compTest(String programName, Method m, Object ret, Object caller, Object... args) {
       TestResult trComp = new TestResult(programName + " Unit Test # " + this.diffNum,
                                          "" + this.diffNum,
@@ -363,7 +508,7 @@ public class Autograder extends RunListener {
       if (m != null) {
          try {
             Object t = m.invoke(caller, args);
-            if (t.equals(ret)) {
+            if ((t != null && t.equals(ret)) || (t == ret)) {
                trComp.setScore(this.maxScore);
                trComp.addOutput("SUCCESS: Method - "
                                 + m.getName() + 
@@ -416,7 +561,10 @@ public class Autograder extends RunListener {
       this.allTestResults.add(trComp);
    }
 
+   /** Method to get a method.
+       @see 
 
+    */
    public static Method getMethod(String programName,
                                   String methodName, 
                                   Class<?>... paramTypes) {
