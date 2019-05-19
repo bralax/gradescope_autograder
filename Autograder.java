@@ -41,22 +41,31 @@ public class Autograder extends RunListener {
    private TestResult currentJunitTestResult;
 
    /** The value of each test.*/
-   private double maxScore;
+   protected double maxScore;
    
    /**The current test number we are on.*/
    protected int diffNum;
 
+   /**The visibilty for the current gradescope test.*/
+   protected String visibility;
 
-   private String visibility;
    /**
-      The main class constructor.
+      The Autograder class constructor.
+      Initializes the list of all tests.
+   */
+   public Autograder(int visible, double score) {
+      this.allTestResults = new ArrayList<TestResult>();
+      this.diffNum = 1;
+      this.setVisibility(visible);
+      this.setScore(score);
+   }
+
+   /**
+      The Autograder class constructor.
       Initializes the list of all tests.
    */
    public Autograder() {
-      this.allTestResults = new ArrayList<TestResult>();
-      this.diffNum = 1;
-      this.visibility = "hidden";
-      this.maxScore = 0.1;
+      this(1, 0.1);
    }
 
    public void addTestResult(TestResult t) {
@@ -222,9 +231,13 @@ public class Autograder extends RunListener {
          this.compiler(name+"Sample.java");
       }
       for (int i = 0; i < count; i++) {
+         String visible = this.visibility;
+         if (i >= numVisible) {
+            visible = "hidden";
+         }
          TestResult trDiff = new TestResult(name + " Diff Test #" + i,
                                             "" + this.diffNum,
-                                            this.maxScore, this.visibility);
+                                            this.maxScore, visible);
          this.diffNum++;
          String input = name + "_Diff_" + i + ".in";
          String exOut = name + "_expected_" + i + ".out";

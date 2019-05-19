@@ -21,8 +21,7 @@ public class PictureAutograder extends Autograder {
    public int pictureDiffTest(String p, 
                               String prefix, 
                               int i, 
-                              int j,
-                              int score) {
+                              int j) {
       
       String sampleName = prefix + "sample_" + i;
       String resultName = prefix + i;
@@ -37,9 +36,9 @@ public class PictureAutograder extends Autograder {
                                          " Picture Diff Test for "
                                          + resultName + 
                                          " with map # " + i,
-                                            "" +  this.diffNum,
-                                            score, "hidden");
-      this.diffNum++;
+                                            "" +  super.diffNum,
+                                            super.maxScore, super.visibility);
+      super.diffNum++;
       int faliure = 0;
    
    
@@ -76,7 +75,7 @@ public class PictureAutograder extends Autograder {
          trDiff.setScore(0);
          trDiff.addOutput("The User Run has extra picutres.");
       } else if (faliure == 0) {
-         trDiff.setScore(score);
+         trDiff.setScore(super.maxScore);
          trDiff.addOutput(sampleName + " & " + resultName + " Match.");
       }
       if (fSample.exists() || fUser.exists()) {
