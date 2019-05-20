@@ -31,7 +31,7 @@ import org.junit.runner.JUnitCore;
    and instances can be made to store all important information.
    @author Brandon Lax
 */
-public class Autograder extends RunListener {
+public class Autograder {
 
    /** The value of each test.*/
    protected double maxScore;
