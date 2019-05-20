@@ -562,7 +562,7 @@ public class Autograder {
    }
 
    /** Method to get a method.
-       @see #compTest(String, Method, Object, Object, Object...)
+       @see #compTest(String, Method, Object, Object, Object...) compTest
        This method takes in the name of the method and class
        and gets the method to use with the compTest.
        @param programName the name of the java class
@@ -587,7 +587,7 @@ public class Autograder {
    }
 
    /** Method to get a method.
-       @see #compTest(String, Method, Object, Object, Object...)
+       @see #compTest(String, Method, Object, Object, Object...) compTest
        This method takes in the name of the method and class
        and gets the method to use with the compTest.
        @param programName the name of the java class
@@ -607,7 +607,6 @@ public class Autograder {
    }
 
    /** Method to test whether a method exists.
-       @see #compTest(String, Method, Object, Object, Object[])
        This method takes in the name of the method and class
        and checks if a method exists. It then adds a TestResult
        of whether the method exists.
@@ -822,7 +821,7 @@ public class Autograder {
       all the public methods asked and nothing more.
       In java, access modifiers are represented as ints. The Modifier
       class has all of the possibiliites stored as constants.
-      @see java.lang.reflect.Modifier
+      @see java.lang.reflect.Modifier java.lang.reflect.Modifier
       <b>This method only looks at declaredMethods not constructors and inherited methods.</b>
       @param programName the name of the java class
       @param quantity the number of methods the class needs.
