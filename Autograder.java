@@ -659,7 +659,7 @@ public class Autograder extends RunListener {
    }
 
    /**
-      Method to convert the string paramaters to Class\<?\>[].
+      Method to convert the string paramaters to Class{@literal <?>}[].
       Some rules for the string format. Basically take the name 
       that would be in front of an object of that type and that 
       is a string. Order matters as it has to be the same order
@@ -700,11 +700,16 @@ public class Autograder extends RunListener {
    }
 
 /**
-      Runs a all the diff tests for a specific file.
+      Runs all the comparison tests for a specific file.
+      A comparison test is similar to a {@link #compTest(String, Method, Object, Object, Object...) compTest}
+      but it is comparing the output of the students program 
+      to the output of the same method for a sample program.
+      This method will compile the sample program for you.
+      The sample programs named: {Program_Name}Sample.java
       All input files are named: {Program_Name}_Comp_#.in
       @param programName the program to do comparison tests on
       @param testCount the number of tests to perform
-      @param caller the object the method should be called on
+      @param caller the object the method should be called on (if an instance method)
    */
    public void comparisonTests(String programName, int testCount, Object caller) {
       PrintStream original = System.out;
@@ -770,7 +775,12 @@ public class Autograder extends RunListener {
 
 
    /**
-
+      This is a method to run a set of junit tests on a class.
+      This method will run the junits and give points for
+      every junit passed and give the faliure if the 
+      method failed.
+      The test file is named: {Program_Name}Test.java
+      @param programName the name of the class to test
     */
    public void junitTests(String programName) {
       PrintStream original = System.out;
@@ -780,7 +790,7 @@ public class Autograder extends RunListener {
             
             }
          }));
-      String fileName = programName + "Tests.java";
+      String fileName = programName + "Test.java";
       int compilationResult = this.compiler(fileName);
       if (compilationResult == 0) {
          try {
@@ -804,8 +814,20 @@ public class Autograder extends RunListener {
 
    /**
       Runs a test to make sure that the student submitted enough methods.
+      This has two particular uses. First in Gateway we sometimes ask
+      for them to use a minimum number of helper methods in their code
+      in order to get them to break their code up into chunks. In addition
+      this has the ability to put in an access modifier to be able to check
+      that the method is public or private ensuring that a student created
+      all the public methods asked and nothing more.
+      In java, access modifiers are represented as ints. The Modifier
+      class has all of the possibiliites stored as constants.
+      @see java.lang.reflect.Modifier
+      <b>This method only looks at declaredMethods not constructors and inherited methods.</b>
       @param programName the name of the java class
-      @param quantity the number of methods the class needs
+      @param quantity the number of methods the class needs.
+      @param modifiers the Modifier that we are only looking for
+      @param modify whether to use the access modifier or to look for all methods
       @return whether the class has enough methods
     */
    public boolean testMethodCount(String programName, Integer quantity, int modifiers, boolean modify) {
@@ -865,11 +887,14 @@ public class Autograder extends RunListener {
       return passed;
    }
 
-/**
-      Runs a test to make sure that the student submitted enough methods.
+
+   /**
+      Runs a test to make sure that the student submitted enough constructors.
+      This would allow a professor to ensure that a student created multiple 
+      constructors if the project description requested it.
       @param programName the name of the java class
-      @param quantity the number of methods the class needs
-      @return whether the class has enough methods
+      @param quantity the number of methods the class needs.
+      @return whether the class has enough constructors
     */
    public boolean testConstructorCount(String programName, Integer quantity) {
       boolean passed = false;
@@ -914,10 +939,11 @@ public class Autograder extends RunListener {
       return passed;
    }
    /**
-      Runs a test to make sure that the student submitted enough methods.
+      Runs a test to make sure that the student code has no public instace variables.
+      This method counts the number of fields in the class that are public 
+      and gives credit if the user has no public fields and takes off if they do.
       @param programName the name of the java class
-      @param quantity the number of methods the class needs
-      @return whether the class has enough methods
+      @return whether the class has no public fields
     */
    public boolean testPublicInstanceVariables(String programName) {
       boolean passed = false;
@@ -961,6 +987,14 @@ public class Autograder extends RunListener {
       return passed;
    }
 
+   /** Method to add a seperately made test to the results.
+       This allows for people to make child classes of the autograder
+       if they need tests that dont currently exist that they would 
+       prefer to avoid adding to this class.
+       @param name the name of the test
+       @param success whether the student passed the test
+       @param extraOuput any additional information to display
+    */
    public void addTestResult(String name, boolean success, String extraOutput) {
       TestResult tr = new TestResult(name, ""+this.diffNum, this.maxScore, this.visibility);
       tr.setScore((success) ? this.maxScore : 0);
@@ -968,6 +1002,20 @@ public class Autograder extends RunListener {
       this.allTestResults.add(tr);
    }
 
+   /**
+      Setter of the visibility of the tests.
+      This method updates the current visibility for 
+      any future tests. That visibility is set until updated 
+      upon a future call to this method.
+      This method takes in an int from 0-3 where they represent the following:
+      <ul>
+          <li>0 = visible</li>
+          <li>1 = hidden</li>
+          <li>2 = after_due_date</li>
+          <li>3 = after_published</li>
+      </ul>
+      @param choice the int representing the desired visibility
+    */
    public void setVisibility(int choice) {
       String[] vis = {"visible", "hidden", "after_due_date", "after_published"};
       if (choice > 3 || choice < 0) {
@@ -976,10 +1024,28 @@ public class Autograder extends RunListener {
       this.visibility = vis[choice];
    }
 
+
+   /**
+      A method to get the current visibility.
+      This method returns the visibility as a string.
+      @return the current visibility
+    */
    public String getVisibility() {
       return this.visibility;
    }
 
+   /**
+      A method to set the point value of the tests.
+      This method updates the points awarded for passing
+      a test and the amount the test is worth. This
+      autograder only works in pass fail as it breaks 
+      each test to be the smallest possible component.
+      The results will stay at this score until changed
+      by calling this method again. A score must be positive.
+      If the input is not positive then the score will
+      automatically be set to 0.1
+      @param score the new score value of a test
+    */
    public void setScore(double score) {
       if (score < 0) {
          score = 0.1;
@@ -987,6 +1053,12 @@ public class Autograder extends RunListener {
       this.maxScore = score;
    }
 
+   /**
+      A method to get the current single test score.
+      This returns the number of points that a test
+      is worth.
+      @return the point value of passing a test
+    */
    public double currentScore() {
       return this.maxScore;
    }
