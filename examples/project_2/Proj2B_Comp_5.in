@@ -1,0 +1,4 @@
+validateMessage
+1
+java.lang.String
+This message ends in an exclamation mark!

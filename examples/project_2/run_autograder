@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+##########################################################
+# Autograder script for 500.112, Gateway Computing: Java #
+##########################################################
+
+# If script is passed parameter "local", runs the script locally
+where_to_run=$1
+
+# Setting folder variables
+src_files=/autograder/source/
+subm_files=/autograder/submission/
+results=/autograder/results/
+
+# make it local
+if [ "$where_to_run" == "local" ]
+then
+    src_files=".${src_files}"
+    subm_files=".${subm_files}"
+    results=".${results}"
+fi
+
+prgs=('Proj2B')
+
+############
+# Clean up #
+############
+echo 'Removing files we will generate, just in case'
+remove_files
+
+# need to do a bit of back and forth due to local filesystem
+if [ "$where_to_run" != "local" ]
+then
+    cd $src_files
+fi
+
+# Copy student code into folder where we'll execute it
+for i in ${prgs[@]}
+do
+    cp ${subm_files}${i}.java $src_files
+done
+
+go_there
+
+#####################################
+# Compile sample code               #
+#####################################
+echo "COMPILING AUTOGRADER CODE..."
+javac -classpath junit/junit-4.13-beta-2.jar:. AutograderMain.java
+javac ${prgs[0]}Sample.java
+come_back
+
+
+######################
+# Create JSON output #
+######################
+echo ''
+echo 'Now creating JSON output'
+
+json_prg="AutograderMain"
+rslt_folder=$results
+
+# Note in the local case, the result folder is in the source file
+if [ "$where_to_run" == "local" ]
+then
+    cd $src_files
+    rslt_folder="results/"
+fi
+
+    java -classpath junit/junit-4.13-beta-2.jar:. $json_prg ${prgs[0]} 7 14 > ${rslt_folder}results.json 
+    rm *.out
+echo ''
+echo 'Autograder script ended'
+
+# If we're running around locally and need to jump around
+function come_back {
+    if [ "$where_to_run" == "local" ]
+    then
+        cd ..
+        cd ..
+    fi
+}
+
+# If we're running around locally and need to jump around
+function go_there {
+    if [ "$where_to_run" == "local" ]
+    then
+        cd $src_files
+    fi
+}
+
+function remove_files {
+    echo ''
+    rm -f ${results}results.json
+
+    for i in "${prgs[@]}"
+    do
+        rm -f ${src_files}${i}.java
+        rm -f ${src_files}${i}.class
+        rm -f ${src_files}${i}.compile
+        rm -f ${src_files}${i}.out
+        rm -f ${src_files}${i}.pass
+        rm -f ${src_files}${i}.diffresults
+        rm -f ${src_files}${i}.expected
+    done
+    rm -f ${src_files}_difflines*
+    rm -f ${src_files}_checkresult*.txt
+}

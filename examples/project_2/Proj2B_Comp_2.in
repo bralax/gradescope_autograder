@@ -1,0 +1,4 @@
+validateMessage
+1
+java.lang.String
+this string is missing a capital starting letter.
