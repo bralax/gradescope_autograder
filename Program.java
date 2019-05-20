@@ -1,5 +1,13 @@
    /**
-      Small sub class representing a Java program.
+      Small class representing a Java program.
+      This is used in the sample main as a 
+      way to abstract out information so 
+      that the autograder does not have to be
+      updated every time from scratch for a new
+      project and can just be updated in the 
+      run_autograder file. 
+      @author Brandon Lax
+      @see AutograderMain
     */
    public class Program {
       /**The name of the program.*/
@@ -22,7 +30,9 @@
       /**
          Public constructor of the class.
          @param newName the name of the program
-         @param count the number of diff tests
+         @param diffCount the number of diff tests
+         @param unitCount the number of comparison tests
+         @param written stores low bit is user written and 2's bit is junits or not
        */
       Program(String newName, String diffCount, String unitCount, String written) {
          this.name = newName;
@@ -72,10 +82,18 @@
          return this.unitCount;
       }
 
+      /**
+         Metho to check who wrote the java file.
+         @return true if written by student false if a starter file
+       */
       public boolean userWritten() {
          return this.userWritten;
       }
 
+      /**
+         Method to check if the file has junits attacked.
+         @return true if junits false otherwise
+       */
       public boolean hasJunits() {
          return this.junits;
       }
