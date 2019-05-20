@@ -1,12 +1,5 @@
-This repo contains a basic autograder.
+# A Java Gradescope Autograder
 
- 
-It basically moves all the files into the source folder.
-Then it compiles and runs Autograder.java which checks
-for existance, compilation and checkstyle compliance.
-It also runs a set of diff tests for each program.
-It takes arguments in pairs: programName #ofDiffTests
-For autograder to run it must have at least one file to
-run and test
+This repo contains the autograder used in EN.500.112 Gateway Computing: JAVA at Johns Hopkins University.
 
-NOTE:  Still being Edited
+The design of the autograder allows for a large number of options

@@ -26,7 +26,7 @@ import org.junit.runner.notification.RunListener;
 import org.junit.runner.JUnitCore;
 
 /**
-   Classs representing an autograder.
+   Classs representing an autograder.\n
    It's main method is the running of the autograder
    and instances can be made to store all important information.
    @author Brandon Lax
@@ -55,7 +55,7 @@ public class Autograder {
    public static final String CHECKSTYLE_XML = "/autograder/source/checkstyle/check112.xml";
 
    /**
-      The Autograder class constructor.
+      The Autograder class constructor.\n
       Initializes the list of all tests.
       @param visible The visibility of the result to students see {@link #setVisibility(int) setvisibility}
       @param score The amount of points a test is worth
@@ -68,8 +68,8 @@ public class Autograder {
    }
 
    /**
-      The Autograder class constructor.
-      Initializes the list of all tests.
+      The Autograder class constructor.\n
+      Initializes the list of all tests.\n
       Also sets the visibility to hidden and 
       the score to 0.1
    */
@@ -77,7 +77,7 @@ public class Autograder {
       this(1, 0.1);
    }
    
-   /** Method to add a seperately made test to the results.
+   /** Method to add a seperately made test to the results.\n
        This allows for people to make child classes of the autograder
        if they need tests that dont currently exist that they would 
        prefer to avoid adding to this class. For an example see
@@ -89,8 +89,8 @@ public class Autograder {
    }
    
    
-   /** This is the wrap-up code of the autograder.
-       <b>Must be the last line of the main method.</b> It
+   /** This is the wrap-up code of the autograder.\n
+       <b>Must be the last line of the main method.</b> \nIt
        prints all of the results in a JSON format to 
        standard out.
        @throws Exception fails to create json for a test 
@@ -108,7 +108,7 @@ public class Autograder {
    }
 
    /**
-    * Test to check if source file exists.
+    * Test to check if source file exists.\n
     * Will output whether the file exists as well as 
     * add a junit test for it.
     * @param programName the program name (can include or not include the .java)
