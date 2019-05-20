@@ -1,17 +1,30 @@
-
 import java.io.File;
 import java.awt.Color;
 import jh61b.grader.TestResult;
 
+
+/**
+   Example child class of the Autograder.
+   Has an additional test for comparing the 
+   output of pictures. 
+   @see Autograder
+   @author Brandon Lax
+ */
 public class PictureAutograder extends Autograder {
 
+   /**
+      The constructor of a picture Autograder.
+    */
    public PictureAutograder() {
       super();
    }
 
       /**
       Runs a picture diff tests for a specific file.
-      All input files are named: {Program_Name}_Diff_#.in
+      This currently is designed to work with the 
+      pictures created for project 3 in Gateway
+      Computing Spring 2019. Each picture 
+      was named prefix_i_j.png.
       @param p the program to do diff tests on
       @param prefix the initial part of the name
       @param i the map number
