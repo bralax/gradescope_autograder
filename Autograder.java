@@ -562,8 +562,13 @@ public class Autograder extends RunListener {
    }
 
    /** Method to get a method.
-       @see 
-
+       @see compTest(String, Method, Object, Object, Object...)
+       This method takes in the name of the method and class
+       and gets the method to use with the compTest.
+       @param programName the name of the java class
+       @param methodName the name of the method
+       @param paramTypes the argument classes that the method takes in
+       @return an object representing the method, null if the method does not exist 
     */
    public static Method getMethod(String programName,
                                   String methodName, 
@@ -581,7 +586,15 @@ public class Autograder extends RunListener {
 
    }
 
-
+   /** Method to get a method.
+       @see compTest(String, Method, Object, Object, Object...)
+       This method takes in the name of the method and class
+       and gets the method to use with the compTest.
+       @param programName the name of the java class
+       @param methodName the name of the method
+       @param argTypes the argument classes (in string form) that the method takes in
+       @return an object representing the method, null if the method does not exist 
+    */
    public static Method getMethod(String programName,
                                   String methodName, 
                                   String[] argTypes) {
@@ -593,6 +606,15 @@ public class Autograder extends RunListener {
 
    }
 
+   /** Method to test whether a method exists.
+       @see compTest(String, Method, Object, Object, Object...)
+       This method takes in the name of the method and class
+       and checks if a method exists. It then adds a TestResult
+       of whether the method exists.
+       @param programName the name of the java class
+       @param methodName the name of the method
+       @param argTypes the argument classes (in string form) that the method takes in
+    */
    public void  hasMethodTest(String programName,
                               String methodName, 
                               String[] argTypes) {
@@ -636,6 +658,15 @@ public class Autograder extends RunListener {
       this.allTestResults.add(trHas);
    }
 
+   /**
+      Method to convert the string paramaters to Class\<?\>[].
+      Some rules for the string format. Basically take the name 
+      that would be in front of an object of that type and that 
+      is a string. Order matters as it has to be the same order
+      that you want it to be in for the method.
+      @param args the list of parameter types
+      @return a list of parameter types as a list of classes
+    */
    public static Class<?>[] getClasses(String[] args) {
       int argsCount = args.length;
       Class<?>[] ins = new Class<?>[argsCount];
@@ -670,9 +701,10 @@ public class Autograder extends RunListener {
 
 /**
       Runs a all the diff tests for a specific file.
-      All input files are named: {Program_Name}_Test_#.in
+      All input files are named: {Program_Name}_Comp_#.in
       @param programName the program to do comparison tests on
       @param testCount the number of tests to perform
+      @param caller the object the method should be called on
    */
    public void comparisonTests(String programName, int testCount, Object caller) {
       PrintStream original = System.out;
