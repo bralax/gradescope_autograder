@@ -59,25 +59,24 @@ import javax.swing.KeyStroke;
  *  are encoded using the least significant 24 bits.
  *  Given a 32-bit {@code int} encoding the color, the following code extracts
  *  the RGB components:
- * <blockquote><pre>
+ * <blockquote><pre>{@literal
  *  int r = (rgb >> 16) & 0xFF;
  *  int g = (rgb >>  8) & 0xFF;
- *  int b = (rgb >>  0) & 0xFF;
+ *  int b = (rgb >>  0) & 0xFF;}
  *  </pre></blockquote> 
  *  Given the RGB components (8-bits each) of a color,
  *  the following statement packs it into a 32-bit {@code int}:
  * <blockquote><pre>
- *  int rgb = (r << 16) + (g << 8) + (b << 0);
+ *  {@literal int rgb = (r << 16) + (g << 8) + (b << 0);}
  * </pre></blockquote> 
  *  <p>
- *  A <em>W</em>-by-<en>H</em> picture uses ~ 4 <em>W H</em> bytes of memory,
+ *  A <em>W</em>-by-<em>H</em> picture uses ~ 4 <em>W H</em> bytes of memory,
  *  since the color of each pixel is encoded as a 32-bit <code>int</code>.
  *  <p>
  *  For additional documentation, see
  *  <a href="https://introcs.cs.princeton.edu/31datatype">Section 3.1</a> of
  *  <i>Computer Science: An Interdisciplinary Approach</i>
  *  by Robert Sedgewick and Kevin Wayne.
- *  See {@link GrayscalePicture} for a version that supports grayscale images.
  *
  *  @author Robert Sedgewick
  *  @author Kevin Wayne
@@ -217,6 +216,7 @@ public final class Picture implements ActionListener {
     
    /**
      * Sets the filename.
+     * @param fname the filename
      */
     public void setFilename(String fname) {
         this.filename = fname;
@@ -355,7 +355,7 @@ public final class Picture implements ActionListener {
      * @author Joanne Selinski
      * @param factor scale multiplier
      * @return the large Picture
-     * @throws IllegalArgumentException unless factor >= 1
+     * @throws IllegalArgumentException unless factor {@literal >= 1}
      */
     public Picture scale(int factor) {
         if (factor < 1) throw new IllegalArgumentException();
