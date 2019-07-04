@@ -53,7 +53,7 @@ public abstract class DummyShape implements Comparable {
       return this.sizeBased;
    }
 
-   public void setName(boolean newSize) {
+   public void setSize(boolean newSize) {
       this.sizeBased = newSize;
    }
 

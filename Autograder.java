@@ -374,8 +374,6 @@ public class Autograder {
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: Students code not accessible");
          } catch (InvocationTargetException e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
             Throwable et = e.getCause();
             Exception es;
             if(et instanceof Exception) {
@@ -383,11 +381,10 @@ public class Autograder {
             } else {
                es = e;
             }
-            es.printStackTrace(pw);
-            String sStackTrace = sw.toString(); // stack trace as a string
+            String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: Students code threw " + 
-                             e + "\n Stack Trace: " +
+                             es + "\n Stack Trace: " +
                              sStackTrace);
          }
          this.allTestResults.add(trDiff);
@@ -441,8 +438,6 @@ public class Autograder {
             trComp.addOutput("ERROR: Method - " + 
                              m.getName() + "Is not Accessible");
          } catch (InvocationTargetException e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
             Throwable et = e.getCause();
             Exception es;
             if(et instanceof Exception) {
@@ -450,8 +445,7 @@ public class Autograder {
             } else {
                es = e;
             }
-            es.printStackTrace(pw);
-            String sStackTrace = sw.toString(); // stack trace as a string
+            String sStackTrace = stackTraceToString(e);
             trComp.setScore(0);
             trComp.addOutput("ERROR: Method = " +
                              m.getName() +
@@ -470,6 +464,14 @@ public class Autograder {
       }
       this.allTestResults.add(trComp);
    }
+
+   public static String stackTraceToString(Exception es) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            es.printStackTrace(pw);
+            return sw.toString(); // stack trace as a string
+   }
+
 
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
@@ -1000,6 +1002,7 @@ public class Autograder {
       tr.addOutput(extraOutput);
       this.allTestResults.add(tr);
    }
+
 
    /**
       Setter of the visibility of the tests.
