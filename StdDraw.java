@@ -624,6 +624,8 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
     // set of key codes currently pressed down
     private static TreeSet<Integer> keysDown = new TreeSet<Integer>();
 
+
+    private static ArrayList<DummyShape> moves = new ArrayList<>();
     // singleton pattern: client can't instantiate
     private StdDraw() { }
 
