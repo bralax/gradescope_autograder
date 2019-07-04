@@ -968,6 +968,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      * @param  y1 the <em>y</em>-coordinate of the other endpoint
      */
     public static void line(double x0, double y0, double x1, double y1) {
+       DummyLine d = new DummyLine(penColor);
+       d.setCoordinates(x0, x1, y0, y1);
+       moves.add(d);
        /*offscreen.draw(new Line2D.Double(scaleX(x0), scaleY(y0), scaleX(x1), scaleY(y1)));
          draw();*/
     }
@@ -982,6 +985,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      */
     private static void pixel(double x, double y) {
        //offscreen.fillRect((int) Math.round(scaleX(x)), (int) Math.round(scaleY(y)), 1, 1);
+       DummyPixel d = new DummyPixel(penColor);
+       d.setCoordinates(x, y);
+       moves.add(d);
     }
 
     /**
@@ -997,11 +1003,13 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double r = penRadius;
         float scaledPenRadius = (float) (r * DEFAULT_SIZE);
-
+        DummyPoint d = new DummyPoint(penColor);
+        d.setCoordinates(x, y, r);
+        moves.add(d);
         // double ws = factorX(2*r);
         // double hs = factorY(2*r);
         // if (ws <= 1 && hs <= 1) pixel(x, y);
-        if (scaledPenRadius <= 1) pixel(x, y);
+        //if (scaledPenRadius <= 1) pixel(x, y);
         /*else offscreen.fill(new Ellipse2D.Double(xs - scaledPenRadius/2, ys - scaledPenRadius/2,
                                                  scaledPenRadius, scaledPenRadius));
                                                  draw();*/
@@ -1021,7 +1029,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*radius);
         double hs = factorY(2*radius);
-        if (ws <= 1 && hs <= 1) pixel(x, y);
+        DummyCircle d = new DummyCircle(penColor, false);
+        d.setCoordinates(x, y, radius);
+        moves.add(d);
+        //if (ws <= 1 && hs <= 1) pixel(x, y);
         /*else offscreen.draw(new Ellipse2D.Double(xs - ws/2, ys - hs/2, ws, hs));
           draw();*/
     }
@@ -1040,7 +1051,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*radius);
         double hs = factorY(2*radius);
-        if (ws <= 1 && hs <= 1) pixel(x, y);
+        DummyCircle d = new DummyCircle(penColor, true);
+        d.setCoordinates(x, y, radius);
+        moves.add(d);
+        //if (ws <= 1 && hs <= 1) pixel(x, y);
         /*else offscreen.fill(new Ellipse2D.Double(xs - ws/2, ys - hs/2, ws, hs));
           draw();*/
     }
@@ -1064,7 +1078,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*semiMajorAxis);
         double hs = factorY(2*semiMinorAxis);
-        if (ws <= 1 && hs <= 1) pixel(x, y);
+        DummyEllipse d = new DummyEllipse(penColor, false);
+        d.setCoordinates(x, y, semiMajorAxis, semiMinorAxis);
+        moves.add(d);
+        //if (ws <= 1 && hs <= 1) pixel(x, y);
         /*else offscreen.draw(new Ellipse2D.Double(xs - ws/2, ys - hs/2, ws, hs));
            draw();*/
     }
@@ -1087,7 +1104,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*semiMajorAxis);
         double hs = factorY(2*semiMinorAxis);
-        if (ws <= 1 && hs <= 1) pixel(x, y);
+        DummyEllipse d = new DummyEllipse(penColor, true);
+        d.setCoordinates(x, y, semiMajorAxis, semiMinorAxis);
+        moves.add(d);
+        //if (ws <= 1 && hs <= 1) pixel(x, y);
         /*else offscreen.fill(new Ellipse2D.Double(xs - ws/2, ys - hs/2, ws, hs));
           draw();*/
     }
@@ -1112,7 +1132,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*radius);
         double hs = factorY(2*radius);
-        if (ws <= 1 && hs <= 1) pixel(x, y);
+        DummyArc d = new DummyArc(penColor);
+        d.setCoordinates(x, y, radius, angle1, angle2);
+        moves.add(d);
+        //if (ws <= 1 && hs <= 1) pixel(x, y);
         /*else offscreen.draw(new Arc2D.Double(xs - ws/2, ys - hs/2, ws, hs, angle1, angle2 - angle1, Arc2D.OPEN));
           draw();*/
     }
@@ -1175,6 +1198,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      */
     public static void triangle(double x, double y, double halfLength, double halfHeight) {
     	if (halfHeight <= 0 || halfLength <= 0) throw new IllegalArgumentException("half height or half length must be nonnegative");
+      DummyTriangle d = new DummyTriangle(penColor, false);
+      d.setCoordinates(x, y, halfLength, halfHeight);
+      moves.add(d);
       /*else polygon(new double[] {(x - halfLength), (x + halfLength), x }, new double[] {(y + halfHeight), (y + halfHeight) , (y - halfHeight)} );
         draw();*/
     }
@@ -1190,6 +1216,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
      */
     public static void filledTriangle(double x, double y, double halfLength, double halfHeight) {
     	if (halfHeight <= 0 || halfLength <= 0) throw new IllegalArgumentException("half height or half length must be nonnegative");
+      DummyTriangle d = new DummyTriangle(penColor, true);
+      d.setCoordinates(x, y, halfLength, halfHeight);
+      moves.add(d);
       /*else filledPolygon(new double[] {(x - halfLength), (x + halfLength), x }, new double[] {(y + halfHeight), (y + halfHeight) , (y - halfHeight)} );
         draw();*/
     }
@@ -1210,6 +1239,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*halfWidth);
         double hs = factorY(2*halfHeight);
+        DummyRectangle d = new DummyRectangle(penColor, false);
+        d.setCoordinates(x,y,halfWidth,halfHeight);
+        moves.add(d);
         /*if (ws <= 1 && hs <= 1) pixel(x, y);
         else offscreen.draw(new Rectangle2D.Double(xs - ws/2, ys - hs/2, ws, hs));
           draw();*/
@@ -1231,6 +1263,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*halfWidth);
         double hs = factorY(2*halfHeight);
+        DummyRectangle d = new DummyRectangle(penColor, true);
+        d.setCoordinates(x,y,halfWidth,halfHeight);
+        moves.add(d);
         /*if (ws <= 1 && hs <= 1) pixel(x, y);
         else offscreen.fill(new Rectangle2D.Double(xs - ws/2, ys - hs/2, ws, hs));
         draw();*/
@@ -1256,7 +1291,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         if (n1 != n2) throw new IllegalArgumentException("arrays must be of the same length");
         int n = n1;
         if (n == 0) return;
-
+        DummyPolygon d = new DummyPolygon(penColor, false);
+        d.setCoordinates(x, y);
+        moves.add(d);
         /*GeneralPath path = new GeneralPath();
         path.moveTo((float) scaleX(x[0]), (float) scaleY(y[0]));
         for (int i = 0; i < n; i++)
@@ -1285,7 +1322,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         if (n1 != n2) throw new IllegalArgumentException("arrays must be of the same length");
         int n = n1;
         if (n == 0) return;
-
+        DummyPolygon d = new DummyPolygon(penColor, false);
+        d.setCoordinates(x, y);
+        moves.add(d);
         /*GeneralPath path = new GeneralPath();
         path.moveTo((float) scaleX(x[0]), (float) scaleY(y[0]));
         for (int i = 0; i < n; i++)
