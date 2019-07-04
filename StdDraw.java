@@ -22,6 +22,10 @@
  *
  ******************************************************************************/
 
+import java.util.ArrayList;
+import shapes.*;
+
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.FileDialog;
@@ -646,6 +650,14 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         setCanvasSize(DEFAULT_SIZE, DEFAULT_SIZE);
     }
 
+
+   public static ArrayList<DummyShape> getMoveList() {  
+      return moves;
+   }
+  
+   public static void clearMoveList() {
+      moves = new ArrayList<>();
+   }
     /**
      * Sets the canvas (drawing area) to be <em>width</em>-by-<em>height</em> pixels.
      * This also erases the current drawing and resets the coordinate system,
@@ -1119,7 +1131,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*halfLength);
         double hs = factorY(2*halfLength);
-        if (ws <= 1 && hs <= 1) pixel(x, y);
+        DummySquare d = new DummySquare(penColor, false);
+        d.setCoordinates(x, y, halfLength);
+        moves.add(d);
+        //if (ws <= 1 && hs <= 1) pixel(x, y);
         /*else offscreen.draw(new Rectangle2D.Double(xs - ws/2, ys - hs/2, ws, hs));
         draw();*/
     }
@@ -1141,7 +1156,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*halfLength);
         double hs = factorY(2*halfLength);
-        if (ws <= 1 && hs <= 1) pixel(x, y);
+        DummySquare d = new DummySquare(penColor, true);
+        d.setCoordinates(x, y, halfLength);
+        moves.add(d);
+        //if (ws <= 1 && hs <= 1) pixel(x, y);
         /*else offscreen.fill(new Rectangle2D.Double(xs - ws/2, ys - hs/2, ws, hs));
           draw();*/
     }
