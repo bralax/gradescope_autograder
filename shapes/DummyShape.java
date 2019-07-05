@@ -67,4 +67,8 @@ public abstract class DummyShape implements Comparable {
       }
       return false;
    }
-}
+
+   public String toString() {
+      return this.name +": Color="+this.color.toString()+" Filled: "+String.valueOf(this.filled);
+   }
+ }

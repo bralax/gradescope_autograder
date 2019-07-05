@@ -14,30 +14,40 @@ import java.io.IOException;
 /**
    Example child class of the Autograder.
    Has an additional test for comparing the 
-   output of pictures. 
+   output of using the StdDraw Library. 
    @see Autograder
    @author Brandon Lax
  */
 public class DrawingAutograder extends Autograder {
 
    /**
-      The constructor of a picture Autograder.
+      The constructor of a drawing Autograder.
     */
    public DrawingAutograder() {
       super();
    }
 
-   /** Test.
+   /** Test to check whether the students code draws all expected shapes.
+       WARNING: A students code may be 100% correct and still not pass this test.
+       This test only checks the lists of shapes and their colors. If a student 
+       uses a non-standard color (they calculate the RGB values themself) or
+       use non-standard shapes (creating shapes using the polygon instead of
+       the built in version) they may get the same output but fail the tests.
+       The param size is to know whether to test where size matters (true if 
+       you want to compare size) and order is to know whether the order of 
+       the drawing matterss (this might be important to check layering)
       @param p the name of the students program to run
       @param size boolean false for size agnostic true for size dependent comparison
       @param order boolean false for order agnostic true for order dependent
+      @param inFile the stdinput to be passed to the main method of the code
     */
    public void drawingDiffTest(String p,
                                boolean size,
                                boolean order,
                                String inFile) {
       String name = "Drawing Comparison Test";
-      String[] args = {"String[]"};
+      Object argList = (Object) new String[0];
+      Class[] args = {String[].class};
       PrintStream original = System.out;
       InputStream origin = System.in;
       System.setOut(new PrintStream(
@@ -46,41 +56,49 @@ public class DrawingAutograder extends Autograder {
         }));
       try {
          StdDraw.clearMoveList();
-         System.setIn(new FileInputStream(inFile));
-         Method m  = Autograder.getMethod(p, "main", args);
-         m.invoke(null);
-         ArrayList<DummyShape> opts = StdDraw.getMoveList();
-         StdDraw.clearMoveList();
-         System.in.close();
-         System.setIn(new FileInputStream(inFile));
-         m  = Autograder.getMethod(p+"Sample", "main", args);
-         m.invoke(null);
-         ArrayList<DummyShape> sampleOpts = StdDraw.getMoveList();
-         StdDraw.clearMoveList();
-         for (DummyShape d : sampleOpts) {
-            d.setSize(size);
+         if (inFile != null && inFile != "") {
+            System.setIn(new FileInputStream(inFile));
          }
-         if (opts.size() > sampleOpts.size()) {
-            this.addTestResult(name, false, "The Student made more shapes than the sample \n"+
-                               listToString(opts, sampleOpts));
-         } else if (opts.size() < sampleOpts.size()) {
-            this.addTestResult(name, false, "The Student submission is missing shapes \n"+
-                               listToString(opts, sampleOpts));
-         } else {
-            int out = this.compare(opts, sampleOpts, order);
-            if (out == -1) {
-               this.addTestResult(name, true, "The Student ssubmission makes the same shapes as the sample" +
-                                  "Make sure visually that they are in the correct locations");
+         Method m  = Autograder.getMethod(p, "main", args);
+         if (m != null) {
+            m.invoke(null, argList);
+            ArrayList<DummyShape> opts = StdDraw.getMoveList();
+            StdDraw.clearMoveList();
+            System.in.close();
+            if (inFile != null && inFile != "") {
+               System.setIn(new FileInputStream(inFile));
+            }
+            m  = Autograder.getMethod(p+"Sample", "main", args);
+            m.invoke(null, argList);
+            ArrayList<DummyShape> sampleOpts = StdDraw.getMoveList();
+            StdDraw.clearMoveList();
+            for (DummyShape d : sampleOpts) {
+               d.setSize(size);
+            }
+            if (opts.size() > sampleOpts.size()) {
+               this.addTestResult(name, false, "The Student made more shapes than the sample \n"+
+                                  listToString(opts, sampleOpts));
+            } else if (opts.size() < sampleOpts.size()) {
+               this.addTestResult(name, false, "The Student submission is missing shapes \n"+
+                                  listToString(opts, sampleOpts));
             } else {
-               if (order) {
-                  this.addTestResult(name, false, "The Student and Sample did not match at position #"+out+
-                                     " \n " + listToString(opts, sampleOpts));
+               int out = this.compare(opts, sampleOpts, order);
+               if (out == -1) {
+                  this.addTestResult(name, true, "The Student submission creates the same shapes as the sample \n" +
+                                     "Make sure visually that the shapes are alll in the correct locations");
                } else {
-                  this.addTestResult(name, false, "The Student Submission did not have a matching shape for"
-                                     + " the sample shape at position #"+out+" \n "+
-                                     listToString(opts, sampleOpts));
+                  if (order) {
+                     this.addTestResult(name, false, "The Student and Sample did not match at position #"+out+
+                                        " \n " + listToString(opts, sampleOpts));
+                  } else {
+                     this.addTestResult(name, false, "The Student Submission did not have a matching shape for"
+                                        + " the sample shape at position #"+out+" \n "+
+                                        listToString(opts, sampleOpts));
+                  }
                }
             }
+         } else {
+            this.addTestResult(name, false, "ERROR - Student Submission Missing a Main Method");
          }
       } catch(InvocationTargetException e) {
          Throwable et = e.getCause();
@@ -101,6 +119,99 @@ public class DrawingAutograder extends Autograder {
    }
 
 
+   /** Test to check whether the students code draws all expected shapes.
+       WARNING: A students code may be 100% correct and still not pass this test.
+       This test only checks the lists of shapes and their colors. If a student 
+       uses a non-standard color (they calculate the RGB values themself) or
+       use non-standard shapes (creating shapes using the polygon instead of
+       the built in version) they may get the same output but fail the tests.
+       The param size is to know whether to test where size matters (true if 
+       you want to compare size) and order is to know whether the order of 
+       the drawing matterss (this might be important to check layering)
+      @param p the name of the students program to run
+      @param exp a lists containing all the expected shapes that the program should make
+      @param size boolean false for size agnostic true for size dependent comparison
+      @param order boolean false for order agnostic true for order dependent
+      @param inFile the stdinput to be passed to the main method of the code
+    */
+   public void drawingDiffTest(String p,
+                               ArrayList<DummyShape> exp,
+                               boolean size,
+                               boolean order,
+                               String inFile) {
+      String name = "Drawing Comparison Test";
+      Object argList = (Object) new String[0];
+      Class[] args = {String[].class};
+      PrintStream original = System.out;
+      InputStream origin = System.in;
+      System.setOut(new PrintStream(
+        new OutputStream() {
+           public void write(int b) {}
+        }));
+      try {
+         StdDraw.clearMoveList();
+         if (inFile != null && inFile != "") {
+            System.setIn(new FileInputStream(inFile));
+         }
+         Method m  = Autograder.getMethod(p, "main", args);
+         if (m != null) {
+            m.invoke(null, argList);
+            ArrayList<DummyShape> opts = StdDraw.getMoveList();
+            StdDraw.clearMoveList();
+            System.in.close();
+            for (DummyShape d : exp) {
+               d.setSize(size);
+            }
+            if (opts.size() > exp.size()) {
+               this.addTestResult(name, false, "The Student made more shapes than the sample \n"+
+                                  listToString(opts, exp));
+            } else if (opts.size() < exp.size()) {
+               this.addTestResult(name, false, "The Student submission is missing shapes \n"+
+                                  listToString(opts, exp));
+            } else {
+               int out = this.compare(opts, exp, order);
+               if (out == -1) {
+                  this.addTestResult(name, true, "The Student submission creates the same shapes as the sample \n" +
+                                     "Make sure visually that the shapes are alll in the correct locations");
+               } else {
+                  if (order) {
+                     this.addTestResult(name, false, "The Student and Sample did not match at position #"+out+
+                                        " \n " + listToString(opts, exp));
+                  } else {
+                     this.addTestResult(name, false, "The Student Submission did not have a matching shape for"
+                                        + " the sample shape at position #"+out+" \n "+
+                                        listToString(opts, exp));
+                  }
+               }
+            }
+         } else {
+            this.addTestResult(name, false, "ERROR - Student Submission Missing a Main Method");
+         }
+      } catch(InvocationTargetException e) {
+         Throwable et = e.getCause();
+         Exception es;
+         if(et instanceof Exception) {
+            es = (Exception) et;
+         } else {
+            es = e;
+         }
+         this.addTestResult(name, false, "ERROR: "+p+" Threw " + es + " With Stack Trace: " + stackTraceToString(es));
+      } catch(IllegalAccessException e) {
+         this.addTestResult(name, false, "ERROR: Students Code Not Accessible");
+      } catch(IOException e) {
+         this.addTestResult(name, false, "ERROR: Input File Failed to Open Or Close");
+      }
+      System.setIn(origin);
+      System.setOut(original);
+   }
+
+   /**
+      A method to compare two array lists of shapes.
+      @param opts the shapes made by the student
+      @param samp the expected shapes to be made
+      @param order whether the order of the lists should matter
+      @return -1 if equal, an index greater than or equal to zero representing the first index in the sample of a difference
+    */
    private int compare(ArrayList<DummyShape> opts, ArrayList<DummyShape> samp, boolean order) {
       if (!order) {
          opts = new ArrayList<DummyShape>(opts);
@@ -119,10 +230,17 @@ public class DrawingAutograder extends Autograder {
       return -1;
    }
 
+
+   /**
+      Helper method to take the lists and make them strings for output.
+      @param student the students shape list
+      @param sample the expected shape list
+      @param a string containing output of all the shapes made by both programs
+    */
    private String listToString(ArrayList<DummyShape> student, ArrayList<DummyShape> sample) {
       StringBuilder sb = new StringBuilder();
-      sb.append("Shapes");
-      sb.append("Sample \t Students");
+      sb.append("Shapes \n");
+      sb.append("Sample \t Students \n");
       for (int i = 0; i < Math.max(student.size(), sample.size()); i++) {
          sb.append(""+i+". ");
          if (i < sample.size()) {

@@ -650,11 +650,17 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         setCanvasSize(DEFAULT_SIZE, DEFAULT_SIZE);
     }
 
-
+   /**
+      Method to get the list of moves made.
+      @return the list of moves made
+    */
    public static ArrayList<DummyShape> getMoveList() {  
       return moves;
    }
   
+   /**
+      Method to clear the list of moves made.
+    */
    public static void clearMoveList() {
       moves = new ArrayList<>();
    }
@@ -1132,7 +1138,34 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         double ys = scaleY(y);
         double ws = factorX(2*radius);
         double hs = factorY(2*radius);
-        DummyArc d = new DummyArc(penColor);
+        DummyArc d = new DummyArc(penColor, false);
+        d.setCoordinates(x, y, radius, angle1, angle2);
+        moves.add(d);
+        //if (ws <= 1 && hs <= 1) pixel(x, y);
+        /*else offscreen.draw(new Arc2D.Double(xs - ws/2, ys - hs/2, ws, hs, angle1, angle2 - angle1, Arc2D.OPEN));
+          draw();*/
+    }
+
+   /**
+     * Draws a circular arc of the specified radius,
+     * centered at (<em>x</em>, <em>y</em>), from angle1 to angle2 (in degrees).
+     *
+     * @param  x the <em>x</em>-coordinate of the center of the circle
+     * @param  y the <em>y</em>-coordinate of the center of the circle
+     * @param  radius the radius of the circle
+     * @param  angle1 the starting angle. 0 would mean an arc beginning at 3 o'clock.
+     * @param  angle2 the angle at the end of the arc. For example, if
+     *         you want a 90 degree arc, then angle2 should be angle1 + 90.
+     * @throws IllegalArgumentException if {@code radius} is negative
+     */
+    public static void filledArc(double x, double y, double radius, double angle1, double angle2) {
+        if (radius < 0) throw new IllegalArgumentException("arc radius must be nonnegative");
+        while (angle2 < angle1) angle2 += 360;
+        double xs = scaleX(x);
+        double ys = scaleY(y);
+        double ws = factorX(2*radius);
+        double hs = factorY(2*radius);
+        DummyArc d = new DummyArc(penColor, true);
         d.setCoordinates(x, y, radius, angle1, angle2);
         moves.add(d);
         //if (ws <= 1 && hs <= 1) pixel(x, y);
