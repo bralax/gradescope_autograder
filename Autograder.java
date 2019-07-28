@@ -1,6 +1,8 @@
+import java.util.Random;
 import java.util.List;
 import java.util.ArrayList;
-import jh61b.grader.TestResult; 
+import jh61b.grader.TestResult;
+import jh61b.grader.TestResultList; 
 import java.util.Scanner;  //to read in file of diff results
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +35,9 @@ import org.junit.runner.JUnitCore;
 */
 public class Autograder {
 
+   /**A checksum to ensure all additions of tests.*/
+   private long checksum;
+   
    /** The value of each test.*/
    protected double maxScore;
    
@@ -43,7 +48,7 @@ public class Autograder {
    protected String visibility;
 
    /**The list of all tests performed.*/
-   private List<TestResult> allTestResults;
+   private TestResultList allTestResults;
    
    /**The current junit test.*/
    private TestResult currentJunitTestResult;
@@ -61,7 +66,9 @@ public class Autograder {
       @param score The amount of points a test is worth
    */
    public Autograder(int visible, double score) {
-      this.allTestResults = new ArrayList<TestResult>();
+      Random r = new Random();
+      this.checksum = r.nextLong();
+      this.allTestResults = new TestResultList(this.checksum);
       this.diffNum = 1;
       this.setVisibility(visible);
       this.setScore(score);
@@ -85,7 +92,7 @@ public class Autograder {
        @param t the test to be added to the output
     */
    public void addTestResult(TestResult t) {
-      this.allTestResults.add(t);
+      this.allTestResults.add(t, this.checksum);
    }
    
    
@@ -98,7 +105,7 @@ public class Autograder {
    public void testRunFinished() throws Exception {  
       /* Dump allTestResults to StdOut in JSON format. */
       ArrayList<String> objects = new ArrayList<String>();
-      for (TestResult tr : this.allTestResults) {
+      for (TestResult tr : this.allTestResults.toArray(this.checksum)) {
          objects.add(tr.toJSON());
       }
       String testsJSON = String.join(",", objects);
@@ -140,7 +147,7 @@ public class Autograder {
                                  ".java is present!\n");
          sourceExists = true;
       }
-      this.allTestResults.add(trSourceFile);
+      this.allTestResults.add(trSourceFile, this.checksum);
       return sourceExists;
    }
 
@@ -193,7 +200,7 @@ public class Autograder {
                                   ".java compiled successfully!\n");
          passed = true;
       }
-      this.allTestResults.add(trCompilation);
+      this.allTestResults.add(trCompilation, this.checksum);
       return passed;
    }
    
@@ -245,7 +252,7 @@ public class Autograder {
       } catch (InterruptedException e) {
          return;
       }
-      this.allTestResults.add(trCheck);
+      this.allTestResults.add(trCheck, this.checksum);
    }
 
    
@@ -387,7 +394,7 @@ public class Autograder {
                              es + "\n Stack Trace: " +
                              sStackTrace);
          }
-         this.allTestResults.add(trDiff);
+         this.allTestResults.add(trDiff, this.checksum);
          System.setOut(originalOut);
          System.setIn(originalIn);
       }
@@ -462,7 +469,7 @@ public class Autograder {
          trComp.addOutput("ERROR: Method - " + 
                              m.getName() + "Does not exist");
       }
-      this.allTestResults.add(trComp);
+      this.allTestResults.add(trComp, this.checksum);
    }
 
    public static String stackTraceToString(Exception es) {
@@ -656,7 +663,7 @@ public class Autograder {
          trHas.setScore(0);
          trHas.addOutput("ERROR: Unable to convert input parameters");
       }
-      this.allTestResults.add(trHas);
+      this.allTestResults.add(trHas, this.checksum);
    }
 
    /**
@@ -800,7 +807,7 @@ public class Autograder {
             Listener listen = new Listener(this.maxScore, this.diffNum, programName, this.visibility);
             junit.addListener(listen);
             junit.run(clss);
-            this.allTestResults.addAll(listen.allResults());
+            this.allTestResults.addAll(listen.allResults(), this.checksum);
             this.diffNum = listen.unitNum();
          } catch (Exception e){
             //System.out.println(e);
@@ -884,7 +891,7 @@ public class Autograder {
                                  + programName + 
                                  " could not be found!");
       }
-      this.allTestResults.add(trMethodCount);
+      this.allTestResults.add(trMethodCount, this.checksum);
       return passed;
    }
 
@@ -936,7 +943,7 @@ public class Autograder {
                                  + programName + 
                                  " could not be found!");
       }
-      this.allTestResults.add(trMethodCount);
+      this.allTestResults.add(trMethodCount, this.checksum);
       return passed;
    }
    /**
@@ -984,7 +991,7 @@ public class Autograder {
                                  + programName + 
                                  " could not be found!");
       }
-      this.allTestResults.add(trMethodCount);
+      this.allTestResults.add(trMethodCount, this.checksum);
       return passed;
    }
 
@@ -1007,7 +1014,7 @@ public class Autograder {
       } catch (FileNotFoundException e) {
          trArrayList.setScore(0);
          trArrayList.addOutput("Test failed to open file "+input);
-         this.allTestResults.add(trArrayList);
+         this.allTestResults.add(trArrayList, this.checksum);
          return false;
       }
       int line = 0;
@@ -1016,18 +1023,18 @@ public class Autograder {
          String out = s.nextLine();
          if (out.contains("ArrayList")) {
             int curPoints = 0;
-            for (TestResult t : this.allTestResults) {
+            for (TestResult t : this.allTestResults.toArray(this.checksum)) {
                curPoints += t.getScore();
             }
             trArrayList.setScore(-curPoints);
             trArrayList.addOutput("Submissions in Gateway Computing should not use ArrayLists in their code \n");
             trArrayList.addOutput("An ArrayList Instance was found on line "+line);
-            this.allTestResults.add(trArrayList);
+            this.allTestResults.add(trArrayList, this.checksum);
             return false;
          }
       }
       trArrayList.addOutput("This submission properly does not use ArrayLists in their code");
-      this.allTestResults.add(trArrayList);
+      this.allTestResults.add(trArrayList, this.checksum);
       return false;
    }
 
@@ -1050,7 +1057,7 @@ public class Autograder {
       } catch (FileNotFoundException e) {
          trArrayList.setScore(0);
          trArrayList.addOutput("Test failed to open file "+input);
-         this.allTestResults.add(trArrayList);
+         this.allTestResults.add(trArrayList, this.checksum);
          return false;
       }
       int lineNum = 0;
@@ -1060,24 +1067,20 @@ public class Autograder {
          Scanner line = new Scanner(out);
          if (line.hasNext() && line.next().equals("package")) {
             int curPoints = 0;
-            for (TestResult t : this.allTestResults) {
+            for (TestResult t : this.allTestResults.toArray(this.checksum)) {
                curPoints += t.getScore();
             }
             trArrayList.setScore(-curPoints);
             trArrayList.addOutput("Submissions in Gateway Computing should not use package declarations in their code \n");
             trArrayList.addOutput("A Package declaration was found on line "+lineNum);
-            this.allTestResults.add(trArrayList);
+            this.allTestResults.add(trArrayList, this.checksum);
             return false;
          }
       }
       trArrayList.addOutput("This submission properly does not use ArrayLists in their code");
-      this.allTestResults.add(trArrayList);
+      this.allTestResults.add(trArrayList, this.checksum);
       return false;
    }
-
-   /**
-      ##TODO: Look at security
-    */
 
    /** Method to add a seperately made test to the results.
        This allows for people to make child classes of the autograder
@@ -1091,10 +1094,14 @@ public class Autograder {
       TestResult tr = new TestResult(name, ""+this.diffNum, this.maxScore, this.visibility);
       tr.setScore((success) ? this.maxScore : 0);
       tr.addOutput(extraOutput);
-      this.allTestResults.add(tr);
+      this.allTestResults.add(tr, this.checksum);
    }
 
-
+   /** Helper to convert classs name to the filename.
+      @param name the name of the file
+      @param java whether its a java or class file
+      @return the file name with the suffix at the end (.java/.class)
+    */
    private String classNameToFileName(String name, boolean java) {
       if (java) {
          return name.contains(".java") ? name : name + ".java";
