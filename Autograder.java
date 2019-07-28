@@ -988,6 +988,97 @@ public class Autograder {
       return passed;
    }
 
+   /**
+      Runs a test to make sure that the student code does not use ArrayLists.
+      This method goes line by line and checks if any line includes an ArrayList.
+      @param name the name of the java class
+      @return whether the class declares an ArrayList
+    */
+   public boolean classDoesNotUseArrayList(String name) {
+      boolean passed = true;
+      TestResult trArrayList = new TestResult(name + " Check for ArrayList Use", 
+                                                "" + this.diffNum , this.maxScore, this.visibility);
+      this.diffNum++;
+      String input = name + ".java";
+      String result;
+      Scanner s;
+      try {
+         s = new Scanner(new FileReader(input));
+      } catch (FileNotFoundException e) {
+         trArrayList.setScore(0);
+         trArrayList.addOutput("Test failed to open file "+input);
+         this.allTestResults.add(trArrayList);
+         return false;
+      }
+      int line = 0;
+      while(s.hasNextLine()) {
+         line++;
+         String out = s.nextLine();
+         if (out.contains("ArrayList")) {
+            int curPoints = 0;
+            for (TestResult t : this.allTestResults) {
+               curPoints += t.getScore();
+            }
+            trArrayList.setScore(-curPoints);
+            trArrayList.addOutput("Submissions in Gateway Computing should not use ArrayLists in their code \n");
+            trArrayList.addOutput("An ArrayList Instance was found on line "+line);
+            this.allTestResults.add(trArrayList);
+            return false;
+         }
+      }
+      trArrayList.addOutput("This submission properly does not use ArrayLists in their code");
+      this.allTestResults.add(trArrayList);
+      return false;
+   }
+
+   /**
+      Runs a test to make sure that the student code does not use package declarations.
+      This method goes line by line and checks if any line includes a package declaration.
+      @param name the name of the java class
+      @return whether the class declares a package
+    */
+   public boolean classDoesNotUsePackages(String name) {
+      boolean passed = true;
+      TestResult trArrayList = new TestResult(name + " Check for Package Use", 
+                                                "" + this.diffNum , this.maxScore, this.visibility);
+      this.diffNum++;
+      String input = this.classNameToFileName(name, true);
+      String result;
+      Scanner s;
+      try {
+         s = new Scanner(new FileReader(input));
+      } catch (FileNotFoundException e) {
+         trArrayList.setScore(0);
+         trArrayList.addOutput("Test failed to open file "+input);
+         this.allTestResults.add(trArrayList);
+         return false;
+      }
+      int lineNum = 0;
+      while(s.hasNextLine()) {
+         lineNum++;
+         String out = s.nextLine();
+         Scanner line = new Scanner(out);
+         if (line.hasNext() && line.next().equals("package")) {
+            int curPoints = 0;
+            for (TestResult t : this.allTestResults) {
+               curPoints += t.getScore();
+            }
+            trArrayList.setScore(-curPoints);
+            trArrayList.addOutput("Submissions in Gateway Computing should not use package declarations in their code \n");
+            trArrayList.addOutput("A Package declaration was found on line "+lineNum);
+            this.allTestResults.add(trArrayList);
+            return false;
+         }
+      }
+      trArrayList.addOutput("This submission properly does not use ArrayLists in their code");
+      this.allTestResults.add(trArrayList);
+      return false;
+   }
+
+   /**
+      ##TODO: Look at security
+    */
+
    /** Method to add a seperately made test to the results.
        This allows for people to make child classes of the autograder
        if they need tests that dont currently exist that they would 
@@ -1003,6 +1094,14 @@ public class Autograder {
       this.allTestResults.add(tr);
    }
 
+
+   private String classNameToFileName(String name, boolean java) {
+      if (java) {
+         return name.contains(".java") ? name : name + ".java";
+      } else {
+         return name.contains(".class") ? name : name + ".class";
+      }
+   }
 
    /**
       Setter of the visibility of the tests.
