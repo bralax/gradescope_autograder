@@ -26,7 +26,11 @@ import java.io.FileReader;
 import java.lang.ProcessBuilder.Redirect;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.JUnitCore;
-
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 /**
    Classs representing an autograder.\n
    It's main method is the running of the autograder
@@ -58,6 +62,8 @@ public class Autograder {
 
    /**The location of the checkstyle xml.*/
    public static final String CHECKSTYLE_XML = "/autograder/source/checkstyle/check112.xml";
+
+   public static final long waitTime = 40; 
 
    /**
       The Autograder class constructor.\n
@@ -336,7 +342,8 @@ public class Autograder {
                throw new NoSuchMethodException();
             }
             String[] strings = new String[0];
-            main.invoke(null, ((Object)strings));
+            this.runMethodWithTimeout(main, null, ((Object)strings));
+            //main.invoke(null, ((Object)strings));
             out.flush();
             out.close();
             System.setOut(originalOut);
@@ -393,6 +400,22 @@ public class Autograder {
             trDiff.addOutput("ERROR: Students code threw " + 
                              es + "\n Stack Trace: " +
                              sStackTrace);
+         } catch (TimeoutException e) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Main Method Timed out after "+ waitTime + " Seconds");
+         } catch (ExecutionException e) {
+            Throwable et = e.getCause();
+            Exception es;
+            if(et instanceof Exception) {
+               es = (Exception) et;
+            } else {
+               es = e;
+            }
+            String sStackTrace = stackTraceToString(es);
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students code threw " + 
+                             es + "\n Stack Trace: " +
+                             sStackTrace);
          }
          this.allTestResults.add(trDiff, this.checksum);
          System.setOut(originalOut);
@@ -421,7 +444,8 @@ public class Autograder {
       this.diffNum++;
       if (m != null) {
          try {
-            Object t = m.invoke(caller, args);
+            Object t = this.runMethodWithTimeout(m, caller, args);
+            //Object t = m.invoke(caller, args);
             if ((t != null && t.equals(ret)) || (t == ret)) {
                trComp.setScore(this.maxScore);
                trComp.addOutput("SUCCESS: Method - "
@@ -463,6 +487,34 @@ public class Autograder {
             }
             trComp.addOutput("\n Stack Trace: " +
                              sStackTrace);
+         } catch (ExecutionException e) {
+            Throwable et = e.getCause();
+            Exception es;
+            if(et instanceof Exception) {
+               es = (Exception) et;
+            } else {
+               es = e;
+            }
+            String sStackTrace = stackTraceToString(e);
+            trComp.setScore(0);
+            trComp.addOutput("ERROR: Method = " +
+                             m.getName() +
+                             " threw " + 
+                             es + "On Inputs: \n");
+            for (Object arg: args) {
+               trComp.addOutput("" + arg + "\n");
+            }
+            trComp.addOutput("\n Stack Trace: " +
+                             sStackTrace);
+         } catch(InterruptedException e) {
+            trComp.setScore(0);
+            trComp.addOutput("ERROR: Method call got interrupted!");
+               
+         } catch (TimeoutException e) {
+            trComp.setScore(0);
+            trComp.addOutput("ERROR: Method " 
+                             + m.getName() 
+                             + " Timed out!"); 
          }
       } else {
          trComp.setScore(0);
@@ -1097,6 +1149,13 @@ public class Autograder {
       this.allTestResults.add(tr, this.checksum);
    }
 
+   public Object runMethodWithTimeout(Method m, Object caller, Object... args) throws TimeoutException, ExecutionException, InterruptedException, IllegalAccessException, InvocationTargetException {
+      FutureTask<Object> timeoutTask = new FutureTask<Object>(new CallableMethod(m, caller, args));
+         new Thread(timeoutTask).start();
+         Object out = timeoutTask.get(waitTime, TimeUnit.SECONDS);
+         return out;
+   }
+
    /** Helper to convert classs name to the filename.
       @param name the name of the file
       @param java whether its a java or class file
@@ -1171,4 +1230,21 @@ public class Autograder {
       return this.maxScore;
    }
 
+
+
+ public class CallableMethod implements Callable<Object> {
+   private final Method m;
+   private final Object caller;
+   private final Object[] args;
+
+   public CallableMethod(Method m, Object caller, Object... args) {
+      this.m = m;
+      this.caller = caller;
+      this.args = args;
+   }
+
+   public Object call() throws Exception {
+      return this.m.invoke(this.caller, this.args);
+   }
+ }
 }
