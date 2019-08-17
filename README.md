@@ -32,6 +32,8 @@ see https://bralax.github.io/gradescope_autograder/index.html.
 * A java source has an expected number of methods
 * A java source has an expected number of methods
 * A java source has no public instance methods
+* A java source does not use ArrayLists
+* A java source does not have package declarations
 
 If you need another test, reach out and it could be added in the future.
 

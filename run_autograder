@@ -45,7 +45,7 @@ go_there
 # Compile sample code               #
 #####################################
 echo "COMPILING AUTOGRADER CODE..."
-javac -classpath junit/junit-4.13-beta-2.jar:. Autograder.java
+javac -classpath junit/junit-4.13-beta-2.jar:. AutograderMain.java
 javac ${prgs[0]}Sample.java
 come_back
 
@@ -56,7 +56,7 @@ come_back
 echo ''
 echo 'Now creating JSON output'
 
-json_prg="Autograder"
+json_prg="AutograderMain"
 rslt_folder=$results
 
 # Note in the local case, the result folder is in the source file

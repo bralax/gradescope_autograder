@@ -28,7 +28,7 @@ public class TestResultList {
 
    public TestResult[] toArray(long check) {
       if (check == this.checksum) {
-         return (TestResult[] ) this.allTestResults.toArray();
+         return this.allTestResults.toArray(new TestResult[this.allTestResults.size()]);
       }
       return null;
    }

@@ -63,7 +63,8 @@ public class Autograder {
    /**The location of the checkstyle xml.*/
    public static final String CHECKSTYLE_XML = "/autograder/source/checkstyle/check112.xml";
 
-   public static final long waitTime = 40; 
+   /**The amount of time to wait before timing out a test that runs student code.*/
+   private long waitTime; 
 
    /**
       The Autograder class constructor.\n
@@ -78,6 +79,7 @@ public class Autograder {
       this.diffNum = 1;
       this.setVisibility(visible);
       this.setScore(score);
+      this.waitTime = 15;
    }
 
    /**
@@ -118,6 +120,7 @@ public class Autograder {
       
       System.out.println("{" + String.join(",", new String[] {
                String.format("\"tests\": [%s]", testsJSON)}) + "}");
+      System.exit(0);
    }
 
    /**
@@ -1230,19 +1233,44 @@ public class Autograder {
       return this.maxScore;
    }
 
+   /**Setter for the amount of time to wait before timing out while running student code.
+      The default timeout is 15 seconds.
+      @param timeout the amount of time
+    */
+   public void setTimeout(long timeout) {
+      this.waitTime = timeout;
+   }
 
-
+ /**A Class representing a method that can be called.
+  Used to allow for timeouts when running students code
+ so that instead of the whole autograder timing out and 
+ giving no feedback, the method just times out and they
+ can still recieve feedback for their work.
+*/
  public class CallableMethod implements Callable<Object> {
+   /**The method to invoke.*/
    private final Method m;
+   /**The object to call the method on.*/
    private final Object caller;
+   /**The arguments to pass to the method.*/
    private final Object[] args;
 
+   /**
+      The constructor of CallableMethod Class.
+      @param m the method to call
+      @param caller the object to call the method on
+      @param args the arguments to pass to the method
+    */
    public CallableMethod(Method m, Object caller, Object... args) {
       this.m = m;
       this.caller = caller;
       this.args = args;
    }
 
+   /**The call that gets run when the method is run.
+    @return the result of invoking the method
+    @throws Exception on any failiure of m.invoke()
+   */
    public Object call() throws Exception {
       return this.m.invoke(this.caller, this.args);
    }
