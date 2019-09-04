@@ -205,6 +205,64 @@ public class DrawingAutograder extends Autograder {
       System.setOut(original);
    }
 
+   /** Test to check whether the students code draws an expected shape.
+      @param p the name of the students program to run
+      @param exp the shape the students code must contain
+      @param inFile the std input to be passed to the main method of the code
+    */
+   public void drawingContainsTest(String p,
+                               DummyShape exp,
+                               String inFile) {
+      String name = "Drawing Comparison Test";
+      Object argList = (Object) new String[0];
+      Class[] args = {String[].class};
+      PrintStream original = System.out;
+      InputStream origin = System.in;
+      System.setOut(new PrintStream(
+        new OutputStream() {
+           public void write(int b) {}
+        }));
+      try {
+         StdDraw.clearMoveList();
+         if (inFile != null && inFile != "") {
+            System.setIn(new FileInputStream(inFile));
+         }
+         Method m  = Autograder.getMethod(p, "main", args);
+         if (m != null) {
+            m.invoke(null, argList);
+            ArrayList<DummyShape> opts = StdDraw.getMoveList();
+            StdDraw.clearMoveList();
+            System.in.close();
+            boolean out = this.contains(opts, exp);
+            if (out) {
+               this.addTestResult(name, true, "The Student submission creates the expected shape of /n" +
+                                  exp.toString());
+            } else {
+                  this.addTestResult(name, false, "The Student submission is missing the expected shape of \n" 
+                                     + exp.toString());
+            }
+         } else {
+            this.addTestResult(name, false, "ERROR - Student Submission Missing a Main Method");
+         }
+      } catch(InvocationTargetException e) {
+         Throwable et = e.getCause();
+         Exception es;
+         if(et instanceof Exception) {
+            es = (Exception) et;
+         } else {
+            es = e;
+         }
+         this.addTestResult(name, false, "ERROR: "+p+" Threw " + es + " With Stack Trace: " + stackTraceToString(es));
+      } catch(IllegalAccessException e) {
+         this.addTestResult(name, false, "ERROR: Students Code Not Accessible");
+      } catch(IOException e) {
+         this.addTestResult(name, false, "ERROR: Input File Failed to Open Or Close");
+      }
+      System.setIn(origin);
+      System.setOut(original);
+   }
+
+
    /**
       A method to compare two array lists of shapes.
       @param opts the shapes made by the student
@@ -228,6 +286,17 @@ public class DrawingAutograder extends Autograder {
          }
       }
       return -1;
+   }
+
+/**
+      A method to find if an array lists has a shapes.
+      @param opts the shapes made by the student
+      @param samp the shape to find
+      @return -1 if equal, an index greater than or equal to zero representing the first index in the sample of a difference
+    */
+   private boolean contains(ArrayList<DummyShape> opts, DummyShape samp) {
+      int j = opts.indexOf(samp);
+      return j > -1;
    }
 
 

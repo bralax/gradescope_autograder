@@ -21,6 +21,8 @@ This file contains the main method that runs the autograder. Autograder.java is 
 Currently Autograder.java offers the following tests for use in the AutograderMain.java main method. For more detail about how to use these methods
 see https://bralax.github.io/gradescope_autograder/index.html.
 
+Base
+
 * A Java source file exists
 * A java source file compiles
 * A java source file is checkstyle compliant
@@ -35,6 +37,15 @@ see https://bralax.github.io/gradescope_autograder/index.html.
 * A java source does not use ArrayLists
 * A java source does not have package declarations
 
+Picture Autograder
+* Two created pictures match within a specified margin
+
+Drawing Autograder
+* A java file matches a list of expected shapes
+* A java file creates the same shapes as a sample program
+* A java file creates an expected shape
+
+ 
 If you need another test, reach out and it could be added in the future.
 
 ## Autograder Structure

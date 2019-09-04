@@ -1597,6 +1597,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         //int hs = metrics.getDescent();
         /*offscreen.drawString(text, (float) (xs - ws/2.0), (float) (ys + hs));
           draw();*/
+        DummyText d = new DummyText(penColor);
+        d.setText(text);
+        d.setJustify("center");
+        moves.add(d);
     }
 
     /**
@@ -1611,6 +1615,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         if (text == null) throw new IllegalArgumentException();
         double xs = scaleX(x);
         double ys = scaleY(y);
+        DummyText d = new DummyText(penColor);
+        d.setText(text);
+        d.setJustify("center-rotate");
+        moves.add(d);
         /*offscreen.rotate(Math.toRadians(-degrees), xs, ys);
         text(x, y, text);
         offscreen.rotate(Math.toRadians(+degrees), xs, ys);*/
@@ -1629,6 +1637,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         //FontMetrics metrics = offscreen.getFontMetrics();
         double xs = scaleX(x);
         double ys = scaleY(y);
+        DummyText d = new DummyText(penColor);
+        d.setText(text);
+        d.setJustify("left");
+        moves.add(d);
         //int hs = metrics.getDescent();
         /*offscreen.drawString(text, (float) xs, (float) (ys + hs));
           draw();*/
@@ -1647,6 +1659,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
         //FontMetrics metrics = offscreen.getFontMetrics();
         double xs = scaleX(x);
         double ys = scaleY(y);
+        DummyText d = new DummyText(penColor);
+        d.setText(text);
+        d.setJustify("right");
+        moves.add(d);
         /*int ws = metrics.stringWidth(text);
         int hs = metrics.getDescent();
         offscreen.drawString(text, (float) (xs - ws), (float) (ys + hs));
