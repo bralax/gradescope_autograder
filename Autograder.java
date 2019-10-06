@@ -31,6 +31,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
+import java.lang.SecurityManager;
+import java.lang.SecurityException;
+import java.security.Permission;
 /**
    Classs representing an autograder.\n
    It's main method is the running of the autograder
@@ -80,6 +83,23 @@ public class Autograder {
       this.setVisibility(visible);
       this.setScore(score);
       this.waitTime = 15;
+      this.disableSystemExit();
+   }
+
+   private void disableSystemExit() {
+      SecurityManager securityManager = new StopExitSecurityManager();
+      System.setSecurityManager(securityManager) ;
+   }
+
+   public void enableSystemExit() {
+      SecurityManager mgr = System.getSecurityManager();
+      if ((mgr != null) && (mgr instanceof StopExitSecurityManager)) {
+         StopExitSecurityManager smgr = (StopExitSecurityManager)mgr;
+         System.setSecurityManager(smgr.getPreviousMgr());
+      }
+      else {
+         System.setSecurityManager(null);
+      }
    }
 
    /**
@@ -111,6 +131,7 @@ public class Autograder {
        @throws Exception fails to create json for a test 
     */
    public void testRunFinished() throws Exception {  
+      this.enableSystemExit();
       /* Dump allTestResults to StdOut in JSON format. */
       ArrayList<String> objects = new ArrayList<String>();
       for (TestResult tr : this.allTestResults.toArray(this.checksum)) {
@@ -307,19 +328,20 @@ public class Autograder {
       if (sampleFile) {
          this.compiler(name+"Sample.java");
       }
+      this.setVisibility(0);
       for (int i = 0; i < count; i++) {
          String visible = this.visibility;
          if (i >= numVisible) {
-            visible = "hidden";
+            this.setVisibility(1);
          }
          TestResult trDiff = new TestResult(name + " Diff Test #" + i,
                                             "" + this.diffNum,
-                                            this.maxScore, visible);
+                                            this.maxScore, this.visibility);
          this.diffNum++;
          String input = name + "_Diff_" + i + ".in";
          String exOut = name + "_expected_" + i + ".out";
          String acOut = name + "_" + i + ".out";
-         String result;
+         //String result;
          try {
             File exfile = new File(exOut);
             File infile = new File(input);
@@ -349,36 +371,16 @@ public class Autograder {
             //main.invoke(null, ((Object)strings));
             out.flush();
             out.close();
-            System.setOut(originalOut);
-            String[] procDiff = {"diff", exOut, acOut, "-y", 
-                                 "--width=175", "-t" };
-            ProcessBuilder pbDiff = new ProcessBuilder(procDiff);
-            Process diffProcess = pbDiff.start();
-            diffProcess.waitFor();
-            Scanner s = new Scanner(diffProcess.getInputStream())
-               .useDelimiter("\\A");
-            result = s.hasNext() ? s.next() : "";
-            
-            if (diffProcess.exitValue() == 0) {
-               trDiff.setScore(this.maxScore);
-               trDiff.addOutput("SUCCESS: " + name +
-                                  " passed this diff test");
-            }
-            else { 
-               trDiff.setScore(0);
-               trDiff.addOutput("ERROR: " + name +
-                                  " differed from expected output." +
-                                " Results are below:\n" + result);
-            } 
-            
-         }  catch (IOException e) {
+            //System.setOut(originalOut);
+            diffFiles(trDiff, name, exOut, acOut);
+         } catch (IOException e) {
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: " + name + 
-                             " could not be found to run Diff Test");
+                          " could not be found to run Diff Test");
          } catch (InterruptedException e) {
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: " +  name +
-                             " got interrupted");
+                          " got interrupted");
          } catch (ClassNotFoundException e) {
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: " + name + 
@@ -393,16 +395,24 @@ public class Autograder {
          } catch (InvocationTargetException e) {
             Throwable et = e.getCause();
             Exception es;
+            System.err.println("Test1");
             if(et instanceof Exception) {
                es = (Exception) et;
             } else {
                es = e;
             }
+            if (es instanceof ExitTrappedException) {
+               trDiff.setScore(0);
+               trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
+                                + " its bad practice and can cause the autograder" + 
+                                " to crash.");
+            } else {
             String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: Students code threw " + 
                              es + "\n Stack Trace: " +
                              sStackTrace);
+            }
          } catch (TimeoutException e) {
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: Main Method Timed out after "+ waitTime + " Seconds");
@@ -414,18 +424,71 @@ public class Autograder {
             } else {
                es = e;
             }
+            if (es instanceof InvocationTargetException) {
+               et = es.getCause();
+               if(et instanceof Exception) {
+                  es = (Exception) et;
+               } else {
+                  es = e;
+               }
+            }
+            if (es instanceof ExitTrappedException) {
+               diffFiles(trDiff, name, exOut, acOut);
+               //trDiff.setScore(0);
+               ///trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
+               //                 + " its bad practice and can cause the autograder" + 
+               //                 " to crash.");
+            } else {
             String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: Students code threw " + 
                              es + "\n Stack Trace: " +
                              sStackTrace);
+            }
+
          }
          this.allTestResults.add(trDiff, this.checksum);
          System.setOut(originalOut);
-         System.setIn(originalIn);
+         //System.setIn(originalIn);
       }
    }
 
+   private void diffFiles(TestResult test, String name, String exOut, String acOut) {
+      try {
+
+         String[] procDiff = {"diff", exOut, acOut, "-y", 
+                                    "--width=175", "-t" };
+         ProcessBuilder pbDiff = new ProcessBuilder(procDiff);
+         Process diffProcess = pbDiff.start();
+         diffProcess.waitFor();
+         Scanner s = new Scanner(diffProcess.getInputStream())
+            .useDelimiter("\\A");
+         String result = s.hasNext() ? s.next() : "";
+         if (diffProcess.exitValue() == 0) {
+            test.setScore(this.maxScore);
+            test.addOutput("SUCCESS: " + name +
+                             " passed this diff test");
+         }
+         else { 
+            test.setScore(0);
+            test.addOutput("ERROR: " + name +
+                             " differed from expected output." +
+                             " Results are below:\n"
+                             +"Left: Expected \n"
+                             +"Right: Yours \n"
+                             + result);
+         } 
+      } catch (IOException e) {
+         test.setScore(0);
+         test.addOutput("ERROR: " + name + 
+                          " could not be found to run Diff Test");
+      } catch (InterruptedException e) {
+         test.setScore(0);
+         test.addOutput("ERROR: " +  name +
+                          " got interrupted");
+      }
+
+   }
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
       Basically this method runs the students code and calls 
@@ -521,8 +584,7 @@ public class Autograder {
          }
       } else {
          trComp.setScore(0);
-         trComp.addOutput("ERROR: Method - " + 
-                             m.getName() + "Does not exist");
+         trComp.addOutput("ERROR: " + programName + " is missing the expected method.");
       }
       this.allTestResults.add(trComp, this.checksum);
    }
@@ -531,7 +593,7 @@ public class Autograder {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             es.printStackTrace(pw);
-            return sw.toString(); // stack trace as a string
+            return sw.toString().replace("/", "//"); // stack trace as a string
    }
 
 
@@ -1275,4 +1337,26 @@ public class Autograder {
       return this.m.invoke(this.caller, this.args);
    }
  }
+
+
+   public class StopExitSecurityManager extends SecurityManager
+   {
+      private SecurityManager _prevMgr = System.getSecurityManager();
+ 
+      public void checkPermission(Permission perm)
+      {
+      }
+ 
+      public void checkExit(int status)
+      {
+         super.checkExit(status);
+         throw new ExitTrappedException(); //This throws an exception if an exit is called.
+      }
+ 
+      public SecurityManager getPreviousMgr() { return _prevMgr; }
+   } 
+
+   private static class ExitTrappedException extends SecurityException 
+   { 
+   }
 }

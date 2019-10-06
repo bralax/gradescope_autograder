@@ -15,11 +15,16 @@ public class TestResult {
 
 
 	public TestResult(String name, String number, double maxScore, String visibility) {
-		this.name = name;
+		this.visibility = visibility;
+      if (this.visibility.equals("hidden")) {
+         this.name = name + " (HIDDEN)";
+      } else {
+         this.name = name;
+      }
 		this.number = number;
 		this.maxScore = maxScore;
 		this.outputSB = new StringBuilder();
-		this.visibility = visibility;
+
 	}
 
 	public void setScore(double score) {

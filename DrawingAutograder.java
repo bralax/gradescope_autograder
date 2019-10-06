@@ -213,7 +213,7 @@ public class DrawingAutograder extends Autograder {
    public void drawingContainsTest(String p,
                                DummyShape exp,
                                String inFile) {
-      String name = "Drawing Comparison Test";
+      String name = "Drawing Contains Shape Test";
       Object argList = (Object) new String[0];
       Class[] args = {String[].class};
       PrintStream original = System.out;
@@ -235,7 +235,7 @@ public class DrawingAutograder extends Autograder {
             System.in.close();
             boolean out = this.contains(opts, exp);
             if (out) {
-               this.addTestResult(name, true, "The Student submission creates the expected shape of /n" +
+               this.addTestResult(name, true, "The Student submission creates the expected shape of \n" +
                                   exp.toString());
             } else {
                   this.addTestResult(name, false, "The Student submission is missing the expected shape of \n" 
