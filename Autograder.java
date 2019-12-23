@@ -34,6 +34,9 @@ import java.util.concurrent.TimeUnit;
 import java.lang.SecurityManager;
 import java.lang.SecurityException;
 import java.security.Permission;
+import brandon.Math;
+import java.util.Scanner;
+//import java.util.HashMap;
 /**
    Classs representing an autograder.\n
    It's main method is the running of the autograder
@@ -67,7 +70,10 @@ public class Autograder {
    public static final String CHECKSTYLE_XML = "/autograder/source/checkstyle/check112.xml";
 
    /**The amount of time to wait before timing out a test that runs student code.*/
-   private long waitTime; 
+   private long waitTime;
+
+
+   // private HashMap<String, ClassConverter> conversions;
 
    /**
       The Autograder class constructor.\n
@@ -84,6 +90,22 @@ public class Autograder {
       this.setScore(score);
       this.waitTime = 15;
       this.disableSystemExit();
+      /* conversions = new HashMap<>();
+      conversions.put("int", new ClassConversion {
+            public Object convert(String arg) {
+               return Integer.parseInt(arg);
+            }
+         });
+      conversions.put("char", new ClassConversion {
+            public Object convert(String arg) {
+               return arg.charAt(0);
+            }
+         });
+      conversions.put("double", new ClassConversion {
+            public Object convert(String arg) {
+               return arg.charAt(0);
+            }
+            });*/
    }
 
    private void disableSystemExit() {
@@ -331,6 +353,7 @@ public class Autograder {
       this.setVisibility(0);
       for (int i = 0; i < count; i++) {
          String visible = this.visibility;
+         Math.resetRandom();
          if (i >= numVisible) {
             this.setVisibility(1);
          }
@@ -339,6 +362,7 @@ public class Autograder {
                                             this.maxScore, this.visibility);
          this.diffNum++;
          String input = name + "_Diff_" + i + ".in";
+         //System.err.println(input);
          String exOut = name + "_expected_" + i + ".out";
          String acOut = name + "_" + i + ".out";
          //String result;
@@ -395,7 +419,7 @@ public class Autograder {
          } catch (InvocationTargetException e) {
             Throwable et = e.getCause();
             Exception es;
-            System.err.println("Test1");
+            //System.err.println("Test1");
             if(et instanceof Exception) {
                es = (Exception) et;
             } else {
@@ -434,6 +458,156 @@ public class Autograder {
             }
             if (es instanceof ExitTrappedException) {
                diffFiles(trDiff, name, exOut, acOut);
+               //trDiff.setScore(0);
+               ///trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
+               //                 + " its bad practice and can cause the autograder" + 
+               //                 " to crash.");
+            } else {
+            String sStackTrace = stackTraceToString(es);
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students code threw " + 
+                             es + "\n Stack Trace: " +
+                             sStackTrace);
+            }
+
+         }
+         this.allTestResults.add(trDiff, this.checksum);
+         System.setOut(originalOut);
+         //System.setIn(originalIn);
+      }
+      this.setVisibility(1);
+   }
+
+
+   /**
+      Runs a all the diff tests for a specific file.
+      This runs count diff tests each one using the naming 
+      convetion on the next line for the name of the input file.
+      All input files are named: {Program_Name}_Diff_#.in
+      The diff test have the option of not using a sample program
+      and instead using already made output files. This approach
+      is good if there is a sample run created.
+      The expected output should be named:
+      {program_Name}_expected_#.out
+      This version allows for a certain amount to be forced to be
+      hidden. 
+      @param name the name of the program to do diff tests on
+      @param count the number of diffs to perform
+      @param sampleFile true if using a sample program false if just comparing to a file.
+      @param numVisible The number of tests that should not be automatically hidden (count - numVisible) = numHidden
+   */
+   public void logFileDiffTests(String name, int count, boolean sampleFile, int numVisible) {
+      PrintStream originalOut = System.out;
+      InputStream originalIn = System.in;
+      if (sampleFile) {
+         this.compiler(name+"Sample.java");
+      }
+      this.setVisibility(0);
+      for (int i = 0; i < count; i++) {
+         String visible = this.visibility;
+         if (i >= numVisible) {
+            this.setVisibility(1);
+         }
+         TestResult trDiff = new TestResult(name + " Log File Diff Test #" + i,
+                                            "" + this.diffNum,
+                                            this.maxScore, this.visibility);
+         this.diffNum++;
+         String input = name + "_Diff_" + i + ".in";
+         String exOut = name + "_expected_" + i + ".out";
+         String acOut = name + "_" + i + ".out";
+         //String result;
+         try {
+            File exfile = new File(exOut);
+            File infile = new File(input);
+            File acfile = new File(acOut);
+            File sample = new File(name + "Sample.java");
+            if (sampleFile && sample.exists() && !sample.isDirectory()) {
+               String[] procSample = {"java", name + "Sample"};
+               ProcessBuilder pbSample = new ProcessBuilder(procSample);
+               pbSample.redirectOutput(Redirect.to(exfile));
+               pbSample.redirectInput(Redirect.from(infile));
+               Process sampleProcess = pbSample.start();
+               sampleProcess.waitFor();
+            }
+            PrintStream out = new PrintStream(new FileOutputStream(acOut));
+            System.setOut(out);
+            System.setIn(new FileInputStream(input));
+            Class<?> act = Class.forName(name);
+            if (act == null) {
+               throw new ClassNotFoundException();
+            }
+            Method main = act.getMethod("main", String[].class);
+            if (main == null) {
+               throw new NoSuchMethodException();
+            }
+            String[] strings = new String[0];
+            this.runMethodWithTimeout(main, null, ((Object)strings));
+            //main.invoke(null, ((Object)strings));
+            out.flush();
+            out.close();
+            //System.setOut(originalOut);
+            diffFiles(trDiff, name, "logsample.txt", "log.txt");
+         } catch (IOException e) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: " + name + 
+                          " could not be found to run Diff Test");
+         } catch (InterruptedException e) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: " +  name +
+                          " got interrupted");
+         } catch (ClassNotFoundException e) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: " + name + 
+                             " could not be found to run Diff Test");
+         } catch (NoSuchMethodException e) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students " +
+                             name + " Main method not found");
+         } catch (IllegalAccessException e) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students code not accessible");
+         } catch (InvocationTargetException e) {
+            Throwable et = e.getCause();
+            Exception es;
+            //System.err.println("Test1");
+            if(et instanceof Exception) {
+               es = (Exception) et;
+            } else {
+               es = e;
+            }
+            if (es instanceof ExitTrappedException) {
+               trDiff.setScore(0);
+               trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
+                                + " its bad practice and can cause the autograder" + 
+                                " to crash.");
+            } else {
+            String sStackTrace = stackTraceToString(es);
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students code threw " + 
+                             es + "\n Stack Trace: " +
+                             sStackTrace);
+            }
+         } catch (TimeoutException e) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Main Method Timed out after "+ waitTime + " Seconds");
+         } catch (ExecutionException e) {
+            Throwable et = e.getCause();
+            Exception es;
+            if(et instanceof Exception) {
+               es = (Exception) et;
+            } else {
+               es = e;
+            }
+            if (es instanceof InvocationTargetException) {
+               et = es.getCause();
+               if(et instanceof Exception) {
+                  es = (Exception) et;
+               } else {
+                  es = e;
+               }
+            }
+            if (es instanceof ExitTrappedException) {
+               diffFiles(trDiff, name, "logsample.txt", "log.txt");
                //trDiff.setScore(0);
                ///trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
                //                 + " its bad practice and can cause the autograder" + 
@@ -503,14 +677,30 @@ public class Autograder {
       @param caller An object the method should be called on (null if a static method)
       @param args Any arguments that need to be passed into the method, can be an array of objects
     */
-   public void compTest(String programName, Method m, Object ret, Object caller, Object... args) {
+   public void compTest(String programName, Method m, Object ret, Object caller, String stdinput, Object... args) {
       TestResult trComp = new TestResult(programName + " Unit Test # " + this.diffNum,
                                          "" + this.diffNum,
                                          this.maxScore, this.visibility);
       this.diffNum++;
+      Math.resetRandom();
       if (m != null) {
          try {
-            Object t = this.runMethodWithTimeout(m, caller, args);
+            Object t = null;
+            if (stdinput != null) {
+               InputStream in = System.in;
+               FileInputStream newIo= new FileInputStream(stdinput);
+               System.setIn(newIo);
+               t = this.runMethodWithTimeout(m, caller, args);
+               System.setIn(in);
+               newIo.close();
+            } else {
+               //InputStream in = System.in;
+               //FileInputStream newIo= new FileInputStream(stdinput);
+               //System.setIn(newIo);
+               t = this.runMethodWithTimeout(m, caller, args);
+               //System.setIn(in);
+               //newIo.close();
+            }
             //Object t = m.invoke(caller, args);
             if ((t != null && t.equals(ret)) || (t == ret)) {
                trComp.setScore(this.maxScore);
@@ -528,7 +718,20 @@ public class Autograder {
                                 "\n" + "On Inputs: \n");
             }
             for (Object arg: args) {
-               trComp.addOutput("" + arg + "\n");
+
+               if (arg instanceof char[]) {
+                  char[] vals = (char[])arg;
+                  trComp.addOutput("{ ");
+                  for(int i = 0; i < vals.length; i++) {
+                     trComp.addOutput(""+vals[i]);
+                     if (i < vals.length-1) {
+                        trComp.addOutput(", ");
+                     }
+                  }
+                  trComp.addOutput("} \n");
+               } else {
+                  trComp.addOutput("" + arg + "\n");
+               }
             }
          } catch (IllegalAccessException e) {
             trComp.setScore(0);
@@ -581,6 +784,11 @@ public class Autograder {
             trComp.addOutput("ERROR: Method " 
                              + m.getName() 
                              + " Timed out!"); 
+         } catch (IOException e) {
+            trComp.setScore(0);
+            trComp.addOutput("ERROR: Failed to find Standard" 
+                             + " input file for test");
+
          }
       } else {
          trComp.setScore(0);
@@ -763,8 +971,10 @@ public class Autograder {
                trHas.addOutput("SUCCESS: Class - " + programName
                                + "\nHas a method named: "+ methodName
                                + "\nWith input parameters:\n");
-               for (String arg : argTypes) {
-                  trHas.addOutput(arg +"\n");
+               if (argTypes != null && argTypes.length > 0) {
+                  for (String arg : argTypes) {
+                     trHas.addOutput(arg +"\n");
+                  }
                }
             }
          } catch(Exception e) {
@@ -772,8 +982,10 @@ public class Autograder {
             trHas.addOutput("ERROR: Class - " + programName
                             + "\nDoes not have a method named: "+ methodName
                             + "\nWith input parameters:\n");
-            for (String arg : argTypes) {
-               trHas.addOutput(arg +"\n");
+            if (argTypes != null) {
+               for (String arg : argTypes) {
+                  trHas.addOutput(arg +"\n");
+               }
             }
          }
       } else {
@@ -783,6 +995,66 @@ public class Autograder {
       this.allTestResults.add(trHas, this.checksum);
    }
 
+
+
+   /** Method to test whether a method exists.
+       This method takes in the name of the method and class
+       and checks if a method exists. It then adds a TestResult
+       of whether the method exists.
+       @param programName the name of the java class
+       @param methodName the name of the method
+       @param argTypes the argument classes (in string form) that the method takes in
+    */
+   public void  hasMethodTest(String programName,
+                              String methodName, 
+                              Class<?>[] argTypes) {
+      TestResult trHas = new TestResult("Method Exists Test " + methodName,
+                                         "" + this.diffNum,
+                                         this.maxScore, this.visibility);
+      Class<?> args[] = argTypes;
+      if (args != null) {
+         try {
+            Class<?> c = Class.forName(programName);
+            if (c == null) {
+               trHas.setScore(0);
+               trHas.addOutput("ERROR: Class - " + programName 
+                               + " does not exist");
+            } else {
+               Method m = c.getMethod(methodName, args);
+               if (m == null) {
+                  throw new NoSuchMethodException();
+               }
+               trHas.setScore(this.maxScore);
+               trHas.addOutput("SUCCESS: Class - " + programName
+                               + "\nHas a method named: "+ methodName
+                               + "\nWith input parameters:\n");
+               if (argTypes != null && argTypes.length > 0) {
+                  for (Class<?> arg : argTypes) {
+                     trHas.addOutput(arg.getName() +"\n");
+                  }
+               }
+            }
+         } catch(Exception e) {
+            trHas.setScore(0);
+            trHas.addOutput("ERROR: Class - " + programName
+                            + "\nDoes not have a method named: "+ methodName
+                            + "\nWith input parameters:\n");
+            if (argTypes != null) {
+               for (Class<?> arg : argTypes) {
+                  trHas.addOutput(arg.getName() +"\n");
+               }
+            }
+         }
+      } else {
+         trHas.setScore(0);
+         trHas.addOutput("ERROR: Unable to convert input parameters");
+      }
+      this.allTestResults.add(trHas, this.checksum);
+   }
+
+
+
+   
    /**
       Method to convert the string paramaters to Class{@literal <?>}[].
       Some rules for the string format. Basically take the name 
@@ -793,13 +1065,14 @@ public class Autograder {
       @return a list of parameter types as a list of classes
     */
    public static Class<?>[] getClasses(String[] args) {
-      int argsCount = args.length;
-      Class<?>[] ins = new Class<?>[argsCount];
-      try {
-         for (int j = 0; j < argsCount; j++) {
-            String inputop = args[j];
-            Class<?> c;
-            switch (inputop) {
+      if (args != null) {
+         int argsCount = args.length;
+         Class<?>[] ins = new Class<?>[argsCount];
+         try {
+            for (int j = 0; j < argsCount; j++) {
+               String inputop = args[j];
+               Class<?> c;
+               switch (inputop) {
                case "int":
                   c = int.class;
                   break;
@@ -812,16 +1085,23 @@ public class Autograder {
                case "float":
                   c = float.class;
                   break;
+               case "char[]":
+                  c = char[].class;
+                  break;
                default:
                   c  = Class.forName(inputop);
-            }
+               }
             
-            ins[j] = c;
+               ins[j] = c;
+            }
+         } catch (ClassNotFoundException e) {
+            return null;
          }
-      } catch (ClassNotFoundException e) {
-         return null;
+         return ins;
+      } else {
+         Class<?>[] ins = {};
+         return ins;
       }
-      return ins;
    }
 
 /**
@@ -847,6 +1127,7 @@ public class Autograder {
       this.compiler(programName+"Sample.java");
       for (int i = 0; i < testCount; i++) {
          String input = programName + "_Comp_" + i + ".in";
+         //System.err.println(input);
          String result;
          Scanner s;
          try {
@@ -856,43 +1137,80 @@ public class Autograder {
          }
          String method = s.next();
          int argsCount = s.nextInt();
+         s.nextLine();
          String[] argStrings = new String[argsCount];
          for (int j = 0; j < argStrings.length; j++) {
             argStrings[j] = s.next();
          }
          Class<?>[] ins = this.getClasses(argStrings);
+         boolean stdinput = s.nextInt() == 1;
          s.nextLine();
          Object[] args = new Object[argsCount];
+         Object[] argsSample = new Object[argsCount];
          for (int j = 0; j < args.length; j++) {
-            Object c;
+            Object c, d;
             String val = s.nextLine();
             if (!ins[j].equals(String.class)) {
                if (ins[j].equals(int.class)) {
                   c = Integer.parseInt(val);
+                  d = Integer.parseInt(val);
                } else if (ins[j].equals(boolean.class)) {
                   c = Boolean.parseBoolean(val);
+                  d = Boolean.parseBoolean(val);
                } else if (ins[j].equals(char.class)) {
                   c = val.charAt(0);
+                  d = val.charAt(0);
                } else if (ins[j].equals(float.class)) {
-                  c = Float.parseFloat(val); 
+                  c = Float.parseFloat(val);
+                  d = Float.parseFloat(val); 
+               } else if (ins[j].equals(char[].class)) {//Arrays!!
+                     String[] words = val.substring(val.indexOf("{ ")+2, val.indexOf(" }")).split(", ");
+                     char[] letters = new char[words.length];
+                     //char[] letterSample = new char[words.length];
+                     for(int w = 0; w < words.length; w++) {
+                        letters[w] = words[w].charAt(0);
+                        //letterSample[w] = words[w].charAt(0);
+                     }
+                     c = letters;
+                     d = letters.clone();
                } else {
                   c  = ins[j].cast(val);
+                  d  = ins[j].cast(val);
                }
             } else {
                c = val;
+               d = val;
             }
             args[j] = c;
+            argsSample[j] = d;
          }
-         
          Method m = Autograder.getMethod(programName, method, ins);
          Method ms = Autograder.getMethod(programName + "Sample", method, ins);
          Object out = null;
-         try {
-            out = ms.invoke(caller, args);
-         } catch (Exception e) {
-            //Do nothing
+         String stdInputFile = null;
+         Math.resetRandom();
+         if (stdinput) {
+            stdInputFile = input + "put";
+            try {
+               InputStream in = System.in;
+               String ioFilename = input + "put";
+               FileInputStream newIo = new FileInputStream(ioFilename);
+               System.setIn(newIo);
+               out = ms.invoke(caller, argsSample);
+               newIo.close();
+               System.setIn(in);
+            } catch (Exception e) {
+               //Do nothing
+            }
+         } else {
+            try {
+               out = ms.invoke(caller, argsSample);
+            } catch (Exception e) {
+               //Do nothing
+            }
          }
-         this.compTest(programName, m, out, caller, args);
+         
+         this.compTest(programName, m, out, caller, stdInputFile, args);
       }
       System.setOut(original);
    }
@@ -919,7 +1237,7 @@ public class Autograder {
       int compilationResult = this.compiler(fileName);
       if (compilationResult == 0) {
          try {
-            Class<?> clss = Class.forName(programName +"Tests");
+            Class<?> clss = Class.forName(programName +"Test");
             JUnitCore junit = new JUnitCore();
             Listener listen = new Listener(this.maxScore, this.diffNum, programName, this.visibility);
             junit.addListener(listen);
@@ -930,7 +1248,7 @@ public class Autograder {
             //System.out.println(e);
          }
       } else {
-         System.err.println(compilationResult);
+         //System.err.println(compilationResult);
       }
       System.setOut(original);
    }

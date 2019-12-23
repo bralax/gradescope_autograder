@@ -36,7 +36,9 @@ Base
 * A java source has no public instance methods
 * A java source does not use ArrayLists
 * A java source does not have package declarations
-
+* A java source produces a correct file
+* A java source has an expected number of public methods
+   
 Picture Autograder
 * Two created pictures match within a specified margin
 
@@ -56,3 +58,15 @@ If you need another test, reach out and it could be added in the future.
    * source - All the files uploaded as the autograder
    * submission - All the files the user uploads
    * run_autograder - The running script is seperated from the autograder and run from the base directory.
+
+
+## TODO
+   * Run Checkstyle inline and use a listener to work with the output
+   * Make the system for taking in parameters to a comparison test more robust.
+      * Allow for custom objects as parameters
+      * Use interfaces to allow this to work
+   * Picture diff tests need give back better output on a runtime exception
+   * Inform students when there is a character encoding issue
+   * Add a test for existance of a field
+   * Add a test for no public fields
+   * Create a Make file because building this is crazy.

@@ -10,6 +10,7 @@ public class AutograderMain {
    */
    public static void main(String[] args) throws Exception {
       Autograder gr = new Autograder();
+      gr.setScore(SCORE);
       if (args.length < 3 || (args.length % 3) != 0) {
          System.out.println("Missing Command Line Arguments");
          return;
@@ -18,8 +19,9 @@ public class AutograderMain {
       Program[] programs = new Program[progCount];
       for (int i = 0; i < programs.length; i++) {
          programs[i] = new Program(args[3 * i], args[3 * i + 1], args[3 * i + 2], "01");
+         gr.setVisibility(0);
          if (!gr.testSourceExists(programs[i].name()) ||
-             !gr.testCompiles(programs[i].name())) {
+             !checkCompiles(gr, programs[i].name())) {
             programs[i].setExists(false);
          } else {
             gr.testCheckstyle(programs[i].name());
@@ -27,10 +29,15 @@ public class AutograderMain {
       }
       for (int i = 0; i < programs.length; i++) {
          if (programs[i].exists()) {
-            gr.diffTests(programs[i].name(), programs[i].testCount(), true);
+            gr.diffTests(programs[i].name(), programs[i].testCount(), true, 0);
             gr.comparisonTests(programs[i].name(), programs[i].unitCount(), null);
          }
-      }
+      } 
       gr.testRunFinished();
+   }
+
+   public static boolean checkCompiles(Autograder gr, String name) {
+      gr.setVisibility(1);
+      return gr.testCompiles(name);
    }
 }

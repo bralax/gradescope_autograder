@@ -31,24 +31,17 @@ public class PictureAutograder extends Autograder {
       @param j the image number for the map
       @return whether the pictures match
    */
-   public int pictureDiffTest(String p, 
+   public void pictureDiffTest(String p, 
                               String prefix, 
-                              int i, 
-                              int j) {
+                              double cold,
+                              double hot) {
       
-      String sampleName = prefix + "sample_" + i;
-      String resultName = prefix + i;
-      if (j >= 0) {
-         sampleName += "_" + j + ".png";
-         resultName += "_" + j + ".png";
-      } else {
-         sampleName += ".png";
-         resultName += ".png";
-      }
+      String sampleName = prefix + "sample" + "_"+cold+"_"+hot+".txt.x10.jpg";
+      String resultName = prefix + "_"+cold+"_"+hot+".txt.x10.jpg";
       TestResult trDiff = new TestResult(p + 
-                                         " Picture Diff Test for "
-                                         + resultName + 
-                                         " with map # " + i,
+                                         " Picture Diff Test for map "+prefix
+                                         + " with cold temp: " + cold +
+                                         " and Hot Temp " + hot,
                                             "" +  super.diffNum,
                                             super.maxScore, super.visibility);
       super.diffNum++;
@@ -65,8 +58,30 @@ public class PictureAutograder extends Autograder {
             trDiff.setScore(0);
             trDiff.addOutput("Falied on index: " 
                              + comp[0] + ", " + 
-                             comp[1] + " With a difference of: "
-                             + comp[2]);
+                             comp[1] + " Due to a difference with ");
+            switch(comp[2]) {
+              case 0:
+                 trDiff.addOutput("The Red value of the pixel");
+                 break;
+              case 1:
+                 trDiff.addOutput("The Green value of the pixel");
+                 break;
+              case 2:
+                 trDiff.addOutput("The Blue value of the pixel");
+                 break;
+              case 3:
+                 trDiff.addOutput("The Red & Green values of the pixel");
+                 break;
+              case 4:
+                 trDiff.addOutput("The Blue & Green values of the pixel");
+                 break;
+              case 5:
+                 trDiff.addOutput("The Red & Blue values of the pixel");
+                 break;
+              case 6:
+                 trDiff.addOutput("The Red, Green & Blue values of the pixel");
+                 break;
+            }
             Color sampleColor = sample.get(comp[0], comp[1]);
             Color resultColor = result.get(comp[0], comp[1]);
             trDiff.addOutput("\n Sample Pixel Value: R = " 
@@ -86,15 +101,12 @@ public class PictureAutograder extends Autograder {
          trDiff.addOutput(resultName + " is missing.");
       } else if (!fSample.exists() && fUser.exists()) {
          trDiff.setScore(0);
-         trDiff.addOutput("The User Run has extra picutres.");
+         trDiff.addOutput("The sample code broke");
       } else if (faliure == 0) {
          trDiff.setScore(super.maxScore);
          trDiff.addOutput(sampleName + " & " + resultName + " Match.");
       }
-      if (fSample.exists() || fUser.exists()) {
-         super.addTestResult(trDiff);
-         return faliure;
-      }
-      return -1;
+      super.addTestResult(trDiff);
+
    }
 }

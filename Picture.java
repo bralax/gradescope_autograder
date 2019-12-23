@@ -376,7 +376,7 @@ public final class Picture implements ActionListener {
      * @return {@code true} if this picture is the same dimension as {@code other}
      *         and if all pixels have the same color; {@code false} otherwise
      */
-    public boolean equals(Object other) {
+   /*    public boolean equals(Object other) {
         if (other == this) return true;
         if (other == null) return false;
         if (other.getClass() != this.getClass()) return false;
@@ -387,7 +387,7 @@ public final class Picture implements ActionListener {
             for (int row = 0; row < height(); row++)
                 if (this.getRGB(col, row) != that.getRGB(col, row)) return false;
         return true;
-    }
+        }*/
 
    /**
      * Returns a string representation of this picture.
@@ -405,7 +405,10 @@ public final class Picture implements ActionListener {
                 int rgb = 0;
                 if (isOriginUpperLeft) rgb = image.getRGB(col, row);
                 else                   rgb = image.getRGB(col, height - row - 1);
-                sb.append(String.format("#%06X ", rgb & 0xFFFFFF));
+                Color c = new Color(rgb);
+                sb.append(c.toString());
+                sb.append("\t");
+                //sb.append(String.format("#%06X ", rgb & 0xFFFFFF));
             }
             sb.append("\n");
         }
@@ -472,6 +475,35 @@ public final class Picture implements ActionListener {
         }
     }
 
+   @Override
+   public boolean equals(Object oth) {
+      if (oth instanceof Picture) {
+         int margin = 5;
+         Picture pic2 = (Picture)oth;
+         if (this == pic2) return true;
+         if (pic2 == null) return false;
+         if (this.width()  != pic2.width()) {  
+            return false;
+         }
+         if (this.height() != pic2.height()) {
+            return false;
+         }
+         for (int i = 0; i < width(); i++) {
+            for (int j = 0; j < height(); j++) {
+               Color c1 = this.get(i, j);
+               int c1Sum = c1.getBlue() + c1.getRed() + c1.getGreen();
+               Color c2 = pic2.get(i, j);
+               int c2Sum = c2.getBlue() + c2.getRed() + c2.getGreen();
+               if (c2Sum - c1Sum > margin || c2Sum - c1Sum < -margin) {
+                  return false;
+               }
+            }
+         }
+         return true;
+      }
+      return false;
+   }
+
    public int[] compare (Picture pic2, int margin) {
       int[] success = {-1, -1};
       int[] miss = {-2,-2, -1};
@@ -486,13 +518,44 @@ public final class Picture implements ActionListener {
       for (int i = 0; i < width(); i++) {
          for (int j = 0; j < height(); j++) {
             Color c1 = this.get(i, j);
-            int c1Sum = c1.getBlue() + c1.getRed() + c1.getGreen();
+            //int c1Sum = c1.getBlue() + c1.getRed() + c1.getGreen();
             Color c2 = pic2.get(i, j);
-            int c2Sum = c2.getBlue() + c2.getRed() + c2.getGreen();
-            if (c2Sum - c1Sum > margin || c2Sum - c1Sum < -margin) {
-               int[] fail = {i, j, c2Sum - c1Sum};
+            int diffb = Math.abs(c1.getBlue() - c2.getBlue());
+            int diffr = Math.abs(c1.getRed() - c2.getRed());
+            int diffg = Math.abs(c1.getGreen() - c2.getGreen());
+            if (diffb > margin && diffg > margin && diffr > margin) {
+               int[] fail = {i, j, 6};
                return fail;
             }
+            if (diffb > margin && diffg > margin) {
+               int[] fail = {i, j, 4};
+               return fail;
+            }
+            if (diffg > margin && diffr > margin) {
+               int[] fail = {i, j, 3};
+               return fail;
+            }
+            if (diffb > margin && diffr > margin) {
+               int[] fail = {i, j, 5};
+               return fail;
+            }
+            if (diffb > margin) {
+               int[] fail = {i, j, 2};
+               return fail;
+            }
+            if (diffg > margin) {
+               int[] fail = {i, j, 1};
+               return fail;               
+            }
+            if (diffr > margin) {
+               int[] fail = {i, j, 0};
+               return fail;
+            }
+            //int c2Sum = c2.getBlue() + c2.getRed() + c2.getGreen();
+            /*if (c2Sum - c1Sum > margin || c2Sum - c1Sum < -margin) {
+               int[] fail = {i, j, c2Sum - c1Sum};
+               return fail;
+               }*/
           }
       }
       return success;
