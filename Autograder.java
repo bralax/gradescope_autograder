@@ -36,6 +36,7 @@ import java.lang.SecurityException;
 import java.security.Permission;
 import brandon.Math;
 import java.util.Scanner;
+import com.puppycrawl.tools.checkstyle.Main;
 //import java.util.HashMap;
 /**
    Classs representing an autograder.\n
@@ -308,7 +309,36 @@ public class Autograder {
    }
 
    
+   /**
+      A test that runs a checkstyle test sorting the output.
+      This test takes off for each mistake that a student has. 
+      It also formats the output for easy grading by hand. It 
+      shows each type of error and all the lines on which that error occurs.
+      @param programName the classname of the java file to run the test one
+      @param errValue the number of points lost per type of checkstyle error
+    */
+   public void testSortedCheckstyle(String programName, double errValue) {
+      PrintStream originalOut = System.out;
+      try {
+         GatewayCheckstyleListener.setDefaultValues(this.maxScore, errValue, this.visibility);
+         System.setOut(new PrintStream(
+         new OutputStream() {
+            public void write(int b) {
+            
+            }
+         }));
+         Main.main("-c", "checkstyle/check112listen.xml", programName + ".java");
+      } catch(ExitTrappedException e) {
+         //Ignore the exception
+      } catch (Exception e) {
+         System.err.println("Failed to run checkstyle on file: " + programName + "\n");
+      }
+      System.setOut(originalOut);
+      List<TestResult> all = GatewayCheckstyleListener.getResults();
+      this.allTestResults.addAll(all, this.checksum);
+   }
 
+   
    /**
       Runs a all the diff tests for a specific file.
       This runs count diff tests each one using the naming 
@@ -675,6 +705,7 @@ public class Autograder {
       @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
       @param ret The expect output from the method
       @param caller An object the method should be called on (null if a static method)
+      @param stdinput the file to treat as standard input. If null use the default.
       @param args Any arguments that need to be passed into the method, can be an array of objects
     */
    public void compTest(String programName, Method m, Object ret, Object caller, String stdinput, Object... args) {
@@ -808,7 +839,7 @@ public class Autograder {
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
       Will wrap the int in its object type (Integer) and then call the object version
-      @see #compTest(String, Method, Object, Object, Object...)
+      @see #compTest(String, Method, Object, Object, String, Object...)
       @param programName the name of the java class to test
       @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
       @param ret The expect output from the method
@@ -823,7 +854,7 @@ public class Autograder {
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
       Will wrap the boolean in its object type (Boolean) and then call the object version
-      @see #compTest(String, Method, Object, Object, Object...)
+      @see #compTest(String, Method, Object, Object, String, Object...)
       @param programName the name of the java class to test
       @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
       @param ret The expect output from the method
@@ -838,7 +869,7 @@ public class Autograder {
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
       Will wrap the char in its object type (Character) and then call the object version
-      @see #compTest(String, Method, Object, Object, Object...)
+      @see #compTest(String, Method, Object, Object, String, Object...)
       @param programName the name of the java class to test
       @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
       @param ret The expect output from the method
@@ -853,7 +884,7 @@ public class Autograder {
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
       Will wrap the double in its object type (Double) and then call the object version
-      @see #compTest(String, Method, Object, Object, Object...)
+      @see #compTest(String, Method, Object, Object, String, Object...)
       @param programName the name of the java class to test
       @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
       @param ret The expect output from the method
@@ -868,7 +899,7 @@ public class Autograder {
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
       Will wrap the long in its object type (Long) and then call the object version
-      @see #compTest(String, Method, Object, Object, Object...)
+      @see #compTest(String, Method, Object, Object, String, Object...)
       @param programName the name of the java class to test
       @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
       @param ret The expect output from the method
@@ -883,7 +914,7 @@ public class Autograder {
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
       Will wrap the float in its object type (Float) and then call the object version
-      @see #compTest(String, Method, Object, Object, Object...)
+      @see #compTest(String, Method, Object, Object, String, Object...)
       @param programName the name of the java class to test
       @param m The method to test use {@link #getMethod(String, String, String[]) getMethod} to get the method
       @param ret The expect output from the method
@@ -896,7 +927,7 @@ public class Autograder {
    }
 
    /** Method to get a method.
-       @see #compTest(String, Method, Object, Object, Object...) compTest
+       @see #compTest(String, Method, Object, Object, String, Object...) compTest
        This method takes in the name of the method and class
        and gets the method to use with the compTest.
        @param programName the name of the java class
@@ -921,7 +952,7 @@ public class Autograder {
    }
 
    /** Method to get a method.
-       @see #compTest(String, Method, Object, Object, Object...) compTest
+       @see #compTest(String, Method, Object, Object, String, Object...) compTest
        This method takes in the name of the method and class
        and gets the method to use with the compTest.
        @param programName the name of the java class
@@ -1106,7 +1137,7 @@ public class Autograder {
 
 /**
       Runs all the comparison tests for a specific file.
-      A comparison test is similar to a {@link #compTest(String, Method, Object, Object, Object...) compTest}
+      A comparison test is similar to a {@link #compTest(String, Method, Object, Object, String, Object...) compTest}
       but it is comparing the output of the students program 
       to the output of the same method for a sample program.
       This method will compile the sample program for you.
@@ -1239,7 +1270,7 @@ public class Autograder {
          try {
             Class<?> clss = Class.forName(programName +"Test");
             JUnitCore junit = new JUnitCore();
-            Listener listen = new Listener(this.maxScore, this.diffNum, programName, this.visibility);
+            JunitListener listen = new JunitListener(this.maxScore, this.diffNum, programName, this.visibility);
             junit.addListener(listen);
             junit.run(clss);
             this.allTestResults.addAll(listen.allResults(), this.checksum);

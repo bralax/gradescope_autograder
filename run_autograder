@@ -45,7 +45,7 @@ go_there
 # Compile sample code               #
 #####################################
 echo "COMPILING AUTOGRADER CODE..."
-javac -classpath junit/junit-4.13-beta-2.jar:. AutograderMain.java
+javac -classpath junit/junit-4.13-beta-2.jar:checkstyle/checkstyle-8.10.1-all.jar:. AutograderMain.java
 javac ${prgs[0]}Sample.java
 come_back
 
@@ -66,7 +66,7 @@ then
     rslt_folder="results/"
 fi
 
-    java -classpath junit/*:. $json_prg ${prgs[0]} 7 14 > ${rslt_folder}results.json 
+    java -classpath junit/*:checkstyle/*:. $json_prg ${prgs[0]} 7 14 > ${rslt_folder}results.json 
     rm *.out
 echo ''
 echo 'Autograder script ended'

@@ -12,7 +12,7 @@ import org.junit.runner.Description;
    It allows for testing whether a method fails or passes.
    @author Brandon Lax
 */
-public class Listener extends RunListener {
+public class JunitListener extends RunListener {
 
    /**All the test result created by the junits.*/
    private List<TestResult> allResults;
@@ -34,7 +34,7 @@ public class Listener extends RunListener {
       @param program the name of the java class
       @param visible the visibility of the tests
     */
-   public Listener(double max, int unit, String program, String visible) {
+   public JunitListener(double max, int unit, String program, String visible) {
       this.allResults = new ArrayList<TestResult>();
       this.maxScore = max;
       this.unitNum = unit;

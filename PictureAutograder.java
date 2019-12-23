@@ -27,9 +27,8 @@ public class PictureAutograder extends Autograder {
       was named prefix_i_j.png.
       @param p the program to do diff tests on
       @param prefix the initial part of the name
-      @param i the map number
-      @param j the image number for the map
-      @return whether the pictures match
+      @param cold the cold value of the grid
+      @param hot the hot value of the grid
    */
    public void pictureDiffTest(String p, 
                               String prefix, 
