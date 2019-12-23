@@ -25,7 +25,7 @@ Base
 
 * A Java source file exists
 * A java source file compiles
-* A java source file is checkstyle compliant
+* A java source file is checkstyle compliant (Two forms)
 * A java source produces a proper standard out (diff test)
 * A java source produces an expected output from a method (comparison method)
 * A java source has a specific method
@@ -61,7 +61,6 @@ If you need another test, reach out and it could be added in the future.
 
 
 ## TODO
-   * Run Checkstyle inline and use a listener to work with the output
    * Make the system for taking in parameters to a comparison test more robust.
       * Allow for custom objects as parameters
       * Use interfaces to allow this to work
@@ -69,4 +68,3 @@ If you need another test, reach out and it could be added in the future.
    * Inform students when there is a character encoding issue
    * Add a test for existance of a field
    * Add a test for no public fields
-   * Create a Make file because building this is crazy.
