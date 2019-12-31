@@ -21,10 +21,16 @@ public class GatewayCheckstyleListener implements AuditListener {
    private static double value = 0.1;
    /**The visibility of the test.*/
    private static String visibility = "hidden";
+   /**Whether taking off per type or per mistake.*/
+   private static boolean perType;
+
+
    /**All the errors from the checkstyling..*/
    private List<AuditEvent> checks;
    /**The exception thrown while testing.*/
    private Throwable except; 
+
+   
    /**
       The constructor of the listener.
    */
@@ -37,11 +43,14 @@ public class GatewayCheckstyleListener implements AuditListener {
       @param max the maximum score you can get for checkstyle
       @param lossVal the number of points lost for every mistake
       @param visibil the visibility of each test
+      @param typeOrInst whether to take off per type of error (True) or all mistakes (False)
     */
-   public static void setDefaultValues(double max, double lossVal, String visibil) {
+   public static void setDefaultValues(double max, double lossVal, String visibil,
+                                       boolean typeOrInst) {
       GatewayCheckstyleListener.maxScore = max;
       GatewayCheckstyleListener.value = lossVal;
       GatewayCheckstyleListener.visibility = visibil;
+      GatewayCheckstyleListener.perType = typeOrInst;
    }
 
    /**
@@ -96,11 +105,21 @@ public class GatewayCheckstyleListener implements AuditListener {
                } else {
                   String lastName = getCheckShortName(last);
                   String nextName = getCheckShortName(next);
-                  if (!lastName.equals(nextName)) {
+                  if (!lastName.equals(nextName) &&
+                      GatewayCheckstyleListener.perType) {
+                     //take off points only when changing types
                      score -= value;
                      t.addOutput(createLine(last, rows));
                      t.addOutput("\n");
                      rows.clear();
+                  } else if (!GatewayCheckstyleListener.perType) {
+                     //Take off every instance
+                     score -= value;
+                     if (!lastName.equals(nextName)) {
+                        t.addOutput(createLine(last, rows));
+                        t.addOutput("\n");
+                        rows.clear();
+                     }
                   }
                   rows.add(next.getLine());
                   last = next;

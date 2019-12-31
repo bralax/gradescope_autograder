@@ -334,7 +334,8 @@ public class Autograder {
    
    /**
       A test that runs a checkstyle test sorting the output.
-      This test takes off for each mistake that a student has. 
+      This test takes off for either each type of mistake or 
+      each mistake that a student has. 
       It also formats the output for easy grading by hand. It 
       shows each type of error and all the lines on which that error occurs.
       To use this test you need the CHECKSTYLE_LISTEN_XML to match the location 
@@ -342,11 +343,12 @@ public class Autograder {
       as specified in the README.
       @param programName the classname of the java file to run the test one
       @param errValue the number of points lost per type of checkstyle error
+      @param perType true if taking off per type of mistake, false if per mistake
     */
-   public void testSortedCheckstyle(String programName, double errValue) {
+   public void testSortedCheckstyle(String programName, double errValue, boolean perType) {
       PrintStream originalOut = System.out;
       try {
-         GatewayCheckstyleListener.setDefaultValues(this.maxScore, errValue, this.visibility);
+         GatewayCheckstyleListener.setDefaultValues(this.maxScore, errValue, this.visibility, perType);
          System.setOut(new PrintStream(
          new OutputStream() {
             public void write(int b) {
