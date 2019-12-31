@@ -369,7 +369,7 @@ public class Autograder {
 
    
    /**
-      Runs a all the diff tests for a specific file.
+      Runs all the diff tests for a specific file.
       This runs count diff tests each one using the naming 
       convetion on the next line for the name of the input file.
       All input files are named: {Program_Name}_Diff_#.in
@@ -377,13 +377,13 @@ public class Autograder {
       and instead using already made output files. This approach
       is good if there is a sample run created.
       The expected output should be named:
-      {program_Name}_expected_#.out
+      {program_Name}_#.expected
       @param name the name of the program to do diff tests on
       @param count the number of diffs to perform
       @param sampleFile true if using a sample program false if just comparing to a file. 
    */
-   public void diffTests(String name, int count, boolean sampleFile) {
-      this.diffTests(name, count, sampleFile, count);
+   public void stdOutDiffTests(String name, int count, boolean sampleFile) {
+      this.stdOutDiffTests(name, count, sampleFile, 0);
    }
 
    /**
@@ -395,26 +395,26 @@ public class Autograder {
       and instead using already made output files. This approach
       is good if there is a sample run created.
       The expected output should be named:
-      {program_Name}_expected_#.out
+      {program_Name}_#.expected
       This version allows for a certain amount to be forced to be
       hidden. 
       @param name the name of the program to do diff tests on
       @param count the number of diffs to perform
       @param sampleFile true if using a sample program false if just comparing to a file.
-      @param numVisible The number of tests that should not be automatically hidden (count - numVisible) = numHidden
+      @param numVisible The number of tests that should be visible instead of what visibility is set to (count - numVisible) = numHidden
    */
-   public void diffTests(String name, int count, boolean sampleFile, int numVisible) {
+   public void stdOutDiffTests(String name, int count, boolean sampleFile, int numVisible) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       if (sampleFile) {
          this.compile(name+"Sample.java");
       }
+      String visible = this.visibility;
       this.setVisibility(0);
       for (int i = 0; i < count; i++) {
-         String visible = this.visibility;
          Math.resetRandom();
          if (i >= numVisible) {
-            this.setVisibility(1);
+            this.visibility = visible;
          }
          TestResult trDiff = new TestResult(name + " Diff Test #" + i,
                                             "" + this.diffNum,
@@ -422,7 +422,7 @@ public class Autograder {
          this.diffNum++;
          String input = name + "_Diff_" + i + ".in";
          //System.err.println(input);
-         String exOut = name + "_expected_" + i + ".out";
+         String exOut = name + i + ".expected";
          String acOut = name + "_" + i + ".out";
          //String result;
          try {
@@ -517,10 +517,6 @@ public class Autograder {
             }
             if (es instanceof ExitTrappedException) {
                diffFiles(trDiff, name, exOut, acOut);
-               //trDiff.setScore(0);
-               ///trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
-               //                 + " its bad practice and can cause the autograder" + 
-               //                 " to crash.");
             } else {
             String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
@@ -532,9 +528,8 @@ public class Autograder {
          }
          this.allTestResults.add(trDiff, this.checksum);
          System.setOut(originalOut);
-         //System.setIn(originalIn);
       }
-      this.setVisibility(1);
+      this.visibility = visible;
    }
 
 
@@ -553,7 +548,7 @@ public class Autograder {
       @param name the name of the program to do diff tests on
       @param count the number of diffs to perform
       @param sampleFile true if using a sample program false if just comparing to a file.
-      @param numVisible The number of tests that should not be automatically hidden (count - numVisible) = numHidden
+      @param numVisible The number of tests that should be shown to students (count - numVisible) = numHidden
    */
    public void logFileDiffTests(String name, int count, boolean sampleFile, int numVisible) {
       PrintStream originalOut = System.out;
@@ -561,18 +556,18 @@ public class Autograder {
       if (sampleFile) {
          this.compile(name+"Sample.java");
       }
+      String visible = this.visibility;
       this.setVisibility(0);
       for (int i = 0; i < count; i++) {
-         String visible = this.visibility;
          if (i >= numVisible) {
-            this.setVisibility(1);
+            this.visibility = visible;
          }
          TestResult trDiff = new TestResult(name + " Log File Diff Test #" + i,
                                             "" + this.diffNum,
                                             this.maxScore, this.visibility);
          this.diffNum++;
          String input = name + "_Diff_" + i + ".in";
-         String exOut = name + "_expected_" + i + ".out";
+         String exOut = name + i + ".expected";
          String acOut = name + "_" + i + ".out";
          //String result;
          try {
@@ -684,6 +679,7 @@ public class Autograder {
          System.setOut(originalOut);
          //System.setIn(originalIn);
       }
+      this.visibility = visible;
    }
 
    private void diffFiles(TestResult test, String name, String exOut, String acOut) {
