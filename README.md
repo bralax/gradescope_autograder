@@ -59,7 +59,23 @@ If you need another test, reach out and it could be added in the future.
    * submission - All the files the user uploads
    * run_autograder - The running script is seperated from the autograder and run from the base directory.
 
+## Checkstyle Testing
+   There are two forms of the checkstyle testing. The first is to use a basic checkstyle setup. It says whether the test passes or fails based on whether there are any failures and prints the same output that you would expect from a tradition run of checkstyle.
+   To use this format, you have to set the values of CHECKSTYLE_JAR and CHECKSTYLE_XML in Autograder.java to match the locations of the jar and xml that you are using.
+   The other option is a little more complex. It runs the same test but takes of a specified amount of points PER TYPE of error not per mistake. It then modifies the output to list each type of error and every line on which that error occurs.
+   To use this format, you have to do two steps. First you must modify your checkstyle xml file to include the following lines:
+   ```xml
+   <module name="Checker">
 
+     <!-- The next two lines have to be added for the java program to be able to -->
+     <!-- Listen to the test being run. -->
+     <module name="GatewayCheckstyleListener">
+     </module>
+
+     <!-- list all the checks you want here -->
+   </module>
+   ```
+   Second you have to set CHECKSTYLE_LISTEN_XML to the location of the modified xml file.
 ## TODO
    * Make the system for taking in parameters to a comparison test more robust.
       * Allow for custom objects as parameters

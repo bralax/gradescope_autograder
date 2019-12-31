@@ -1,3 +1,5 @@
+all: Autograder.class AutograderMain.class
+
 %.class: %.java 
 	javac -classpath junit/*:checkstyle/*:. $<
 docs:

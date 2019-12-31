@@ -70,8 +70,10 @@ public class Autograder {
    /**The location of the checkstyle xml.*/
    public static final String CHECKSTYLE_XML = "/autograder/source/checkstyle/check112.xml";
 
+   public static final String CHECKSTYLE_LISTEN_XML = "/autograder/source/checkstyle/check112listen.xml";
+   
    /**The amount of time to wait before timing out a test that runs student code.*/
-   private long waitTime;
+   private long waitTime = 1;
 
 
    // private HashMap<String, ClassConverter> conversions;
@@ -89,7 +91,6 @@ public class Autograder {
       this.diffNum = 1;
       this.setVisibility(visible);
       this.setScore(score);
-      this.waitTime = 15;
       this.disableSystemExit();
       /* conversions = new HashMap<>();
       conversions.put("int", new ClassConversion {
@@ -164,9 +165,31 @@ public class Autograder {
       
       System.out.println("{" + String.join(",", new String[] {
                String.format("\"tests\": [%s]", testsJSON)}) + "}");
-      System.exit(0);
    }
 
+   /** This is the wrap-up code of the autograder.\n
+       <b>Must be the last line of the main method.</b> \nIt
+       prints all of the results in a JSON format to 
+       a specified file.
+       @param filename the file to write the output to
+       @throws Exception fails to create json for a test 
+    */
+   public void testRunFinished(String filename) throws Exception {  
+      this.enableSystemExit();
+      /* Dump allTestResults to StdOut in JSON format. */
+      PrintWriter pw = new PrintWriter(filename);
+      ArrayList<String> objects = new ArrayList<String>();
+      for (TestResult tr : this.allTestResults.toArray(this.checksum)) {
+         objects.add(tr.toJSON());
+      }
+      String testsJSON = String.join(",", objects);
+      
+      pw.println("{" + String.join(",", new String[] {
+               String.format("\"tests\": [%s]", testsJSON)}) + "}");
+      pw.close();
+   }
+
+   
    /**
     * Test to check if source file exists.\n
     * Will output whether the file exists as well as 
@@ -214,7 +237,7 @@ public class Autograder {
       @param fileName The filename of the file to compile
       @return the int result of the java compiler 0 for success, nonzero otherwise 
     */
-   public int compiler(String fileName) {
+   public int compile(String fileName) {
       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
       return compiler.run(null, null, null, fileName);
    }
@@ -314,6 +337,9 @@ public class Autograder {
       This test takes off for each mistake that a student has. 
       It also formats the output for easy grading by hand. It 
       shows each type of error and all the lines on which that error occurs.
+      To use this test you need the CHECKSTYLE_LISTEN_XML to match the location 
+      of the xml file you use and this xml file has to have the listener configured
+      as specified in the README.
       @param programName the classname of the java file to run the test one
       @param errValue the number of points lost per type of checkstyle error
     */
@@ -327,7 +353,8 @@ public class Autograder {
             
             }
          }));
-         Main.main("-c", "checkstyle/check112listen.xml", programName + ".java");
+         Main.main("-c", CHECKSTYLE_LISTEN_XML, programName + ".java");
+         //Main.main("-c",OA "checkstyle/check112listen.xml", programName + ".java");
       } catch(ExitTrappedException e) {
          //Ignore the exception
       } catch (Exception e) {
@@ -378,7 +405,7 @@ public class Autograder {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       if (sampleFile) {
-         this.compiler(name+"Sample.java");
+         this.compile(name+"Sample.java");
       }
       this.setVisibility(0);
       for (int i = 0; i < count; i++) {
@@ -530,7 +557,7 @@ public class Autograder {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       if (sampleFile) {
-         this.compiler(name+"Sample.java");
+         this.compile(name+"Sample.java");
       }
       this.setVisibility(0);
       for (int i = 0; i < count; i++) {
@@ -1155,7 +1182,7 @@ public class Autograder {
             
             }
          }));
-      this.compiler(programName+"Sample.java");
+      this.compile(programName+"Sample.java");
       for (int i = 0; i < testCount; i++) {
          String input = programName + "_Comp_" + i + ".in";
          //System.err.println(input);
@@ -1265,7 +1292,7 @@ public class Autograder {
             }
          }));
       String fileName = programName + "Test.java";
-      int compilationResult = this.compiler(fileName);
+      int compilationResult = this.compile(fileName);
       if (compilationResult == 0) {
          try {
             Class<?> clss = Class.forName(programName +"Test");

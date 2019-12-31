@@ -149,12 +149,13 @@ public class GatewayCheckstyleListener implements AuditListener {
       StringBuilder sb = new StringBuilder();
       sb.append("[");
       sb.append(getCheckShortName(aEvt));
-      sb.append("]  Lines:   ");
+      sb.append("]  Line(s):   ");
       for(Integer i: rows) {
          sb.append(i);
          sb.append(",   ");
       }
-      return sb.toString();
+      return sb.substring(0, sb.length()-4);
+      //return sb.toString();
    }
     /**
      * Gets the short name of a checkstyle error.

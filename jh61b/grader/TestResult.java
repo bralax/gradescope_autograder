@@ -51,8 +51,8 @@ public class TestResult {
 		return "{" + String.join(",", new String[] {
 			String.format("\"%s\": \"%s\"", "name", name),
 			String.format("\"%s\": \"%s\"", "number", number),
-			String.format("\"%s\": %s", "score", score),
-			String.format("\"%s\": %s", "max_score", maxScore),
+			String.format("\"%s\": %.2f", "score", score),
+			String.format("\"%s\": %.2f", "max_score", maxScore),
 			String.format("\"%s\": \"%s\"", "visibility", visibility),
 			String.format("\"%s\": \"%s\"", "output", noQuotes)
 		}) + "}";

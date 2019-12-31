@@ -24,7 +24,7 @@ public class AutograderMain {
              !checkCompiles(gr, programs[i].name())) {
             programs[i].setExists(false);
          } else {
-            gr.testSortedCheckstyle(programs[i].name(), SCORE/10.0);
+            gr.testSortedCheckstyle(programs[i].name(), SCORE/2.0);
          }
       }
       for (int i = 0; i < programs.length; i++) {
