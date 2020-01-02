@@ -387,7 +387,7 @@ public class Autograder {
    }
 
    /**
-      Runs a all the diff tests for a specific file.
+      Runs all the diff tests for a specific file.
       This runs count diff tests each one using the naming 
       convetion on the next line for the name of the input file.
       All input files are named: {Program_Name}_Diff_#.in
@@ -421,10 +421,8 @@ public class Autograder {
                                             this.maxScore, this.visibility);
          this.diffNum++;
          String input = name + "_Diff_" + i + ".in";
-         //System.err.println(input);
          String exOut = name + i + ".expected";
          String acOut = name + "_" + i + ".out";
-         //String result;
          try {
             File exfile = new File(exOut);
             File infile = new File(input);
@@ -451,10 +449,8 @@ public class Autograder {
             }
             String[] strings = new String[0];
             this.runMethodWithTimeout(main, null, ((Object)strings));
-            //main.invoke(null, ((Object)strings));
             out.flush();
             out.close();
-            //System.setOut(originalOut);
             diffFiles(trDiff, name, exOut, acOut);
          } catch (IOException e) {
             trDiff.setScore(0);
@@ -478,7 +474,6 @@ public class Autograder {
          } catch (InvocationTargetException e) {
             Throwable et = e.getCause();
             Exception es;
-            //System.err.println("Test1");
             if(et instanceof Exception) {
                es = (Exception) et;
             } else {
@@ -532,30 +527,181 @@ public class Autograder {
       this.visibility = visible;
    }
 
-
    /**
-      Runs a all the diff tests for a specific file.
-      This runs count diff tests each one using the naming 
-      convetion on the next line for the name of the input file.
-      All input files are named: {Program_Name}_Diff_#.in
-      The diff test have the option of not using a sample program
-      and instead using already made output files. This approach
-      is good if there is a sample run created.
-      The expected output should be named:
-      {program_Name}_expected_#.out
-      This version allows for a certain amount to be forced to be
-      hidden. 
-      @param name the name of the program to do diff tests on
-      @param count the number of diffs to perform
+      Runs a diff test on the std output of a specific java program.
+      This test runs one diff test comparing the output of the java program
+      against either a sampole implementation or a hand written file.
+      These tests rely on redirecting input from a file to standard 
+      input. These tests will not work as expected if the student 
+      opens multiple Scanners to read from standard input. inFile
+      should be a filename without an extension. Thsi test auto-appends
+      extensions onto the filename. The input file should end in .in, 
+      the expected output file should end in .expected and the program
+      will always create the students output file which will end in 
+      .out.
+      @param name the name of the java program to do diff tests on
+      @param inFile the name of the test input file to use without an extension
       @param sampleFile true if using a sample program false if just comparing to a file.
-      @param numVisible The number of tests that should be shown to students (count - numVisible) = numHidden
    */
-   public void logFileDiffTests(String name, int count, boolean sampleFile, int numVisible) {
+   public void stdOutDiffTest(String name, String inFile, boolean sampleFile) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       if (sampleFile) {
          this.compile(name+"Sample.java");
       }
+      Math.resetRandom();
+      TestResult trDiff = new TestResult(name + " Diff Test " + inFile,
+                                         "" + this.diffNum,
+                                         this.maxScore, this.visibility);
+      this.diffNum++;
+      String input = sampleFile + ".in";
+      String exOut = sampleFile + ".expected";
+      String acOut = sampleFile + ".out";
+      try {
+         File exfile = new File(exOut);
+         File infile = new File(input);
+         File acfile = new File(acOut);
+         File sample = new File(name + "Sample.java");
+         if (sampleFile && sample.exists() && !sample.isDirectory()) {
+            String[] procSample = {"java", name + "Sample"};
+            ProcessBuilder pbSample = new ProcessBuilder(procSample);
+            pbSample.redirectOutput(Redirect.to(exfile));
+            pbSample.redirectInput(Redirect.from(infile));
+            Process sampleProcess = pbSample.start();
+            sampleProcess.waitFor();
+         }
+         PrintStream out = new PrintStream(new FileOutputStream(acOut));
+         System.setOut(out);
+         System.setIn(new FileInputStream(input));
+         Class<?> act = Class.forName(name);
+         if (act == null) {
+            throw new ClassNotFoundException();
+         }
+         Method main = act.getMethod("main", String[].class);
+         if (main == null) {
+            throw new NoSuchMethodException();
+         }
+         String[] strings = new String[0];
+         this.runMethodWithTimeout(main, null, ((Object)strings));
+         out.flush();
+         out.close();
+         diffFiles(trDiff, name, exOut, acOut);
+      } catch (IOException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: " + name + 
+                          " could not be found to run Diff Test");
+      } catch (InterruptedException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: " +  name +
+                          " got interrupted");
+      } catch (ClassNotFoundException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: " + name + 
+                          " could not be found to run Diff Test");
+      } catch (NoSuchMethodException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: Students " +
+                          name + " Main method not found");
+      } catch (IllegalAccessException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: Students code not accessible");
+      } catch (InvocationTargetException e) {
+         Throwable et = e.getCause();
+         Exception es;
+         if(et instanceof Exception) {
+            es = (Exception) et;
+         } else {
+            es = e;
+         }
+         if (es instanceof ExitTrappedException) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
+                             + " its bad practice and can cause the autograder" + 
+                             " to crash.");
+         } else {
+            String sStackTrace = stackTraceToString(es);
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students code threw " + 
+                             es + "\n Stack Trace: " +
+                             sStackTrace);
+         }
+      } catch (TimeoutException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: Main Method Timed out after "+ waitTime + " Seconds");
+      } catch (ExecutionException e) {
+         Throwable et = e.getCause();
+         Exception es;
+         if(et instanceof Exception) {
+            es = (Exception) et;
+         } else {
+            es = e;
+         }
+         if (es instanceof InvocationTargetException) {
+            et = es.getCause();
+            if(et instanceof Exception) {
+               es = (Exception) et;
+            } else {
+               es = e;
+            }
+         }
+         if (es instanceof ExitTrappedException) {
+            diffFiles(trDiff, name, exOut, acOut);
+         } else {
+            String sStackTrace = stackTraceToString(es);
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students code threw " + 
+                             es + "\n Stack Trace: " +
+                             sStackTrace);
+         }
+
+      }
+      this.allTestResults.add(trDiff, this.checksum);
+      System.setOut(originalOut);
+   }
+
+
+   /**
+      Runs all the diff tests for a specific java program comparing resulting file output.
+      This runs count diff tests each one using the naming 
+      convetion on the next line for the name of the input file.
+      All input files are named: {Program_Name}_Diff_#.in
+      For this method to work correctly, the sample implementation
+      and the student submission should always write to the same file.
+      If you need different filenames for each run, you should use
+      {@link #logFileDiffTest(String, String, String, String) logFileDiffTest}
+      with a loop to modify the filename before calling each run.
+      @param name the name of the program to do diff tests on
+      @param count the number of diffs to perform
+      @param logFile the filename of the file the students code writes to and should be compared
+      @param sampleLogFile the filename that the sample code writes to and should be used for comparison
+   */
+   public void logFileDiffTests(String name, int count, String logFile,
+                                String sampleLogFile) {
+      this.logFileDiffTests(name, count, 0, logFile, sampleLogFile);
+   }
+
+   
+   /**
+      Runs all the diff tests for a specific java program comparing resulting file output.
+      This runs count diff tests each one using the naming 
+      convetion on the next line for the name of the input file.
+      All input files are named: {Program_Name}_Diff_#.in
+      For this method to work correctly, the sample implementation
+      and the student submission should always write to the same file.
+      If you need different filenames for each run, you should use
+      {@link #logFileDiffTest(String, String, String, String) logFileDiffTest}
+      with a loop to modify the filename before calling each run.
+      @param name the name of the program to do diff tests on
+      @param count the number of diffs to perform
+      @param numVisible The number of tests that should be shown to students (count - numVisible) = numHidden
+      @param logFile the filename of the file the students code writes to and should be compared
+      @param sampleLogFile the filename that the sample code writes to and should be used for comparison
+   */
+   public void logFileDiffTests(String name, int count, int numVisible, String logFile,
+                                String sampleLogFile) {
+      PrintStream originalOut = System.out;
+      InputStream originalIn = System.in;
+      this.compile(name+"Sample.java");
       String visible = this.visibility;
       this.setVisibility(0);
       for (int i = 0; i < count; i++) {
@@ -569,13 +715,12 @@ public class Autograder {
          String input = name + "_Diff_" + i + ".in";
          String exOut = name + i + ".expected";
          String acOut = name + "_" + i + ".out";
-         //String result;
          try {
             File exfile = new File(exOut);
             File infile = new File(input);
             File acfile = new File(acOut);
             File sample = new File(name + "Sample.java");
-            if (sampleFile && sample.exists() && !sample.isDirectory()) {
+            if (sample.exists() && !sample.isDirectory()) {
                String[] procSample = {"java", name + "Sample"};
                ProcessBuilder pbSample = new ProcessBuilder(procSample);
                pbSample.redirectOutput(Redirect.to(exfile));
@@ -596,11 +741,9 @@ public class Autograder {
             }
             String[] strings = new String[0];
             this.runMethodWithTimeout(main, null, ((Object)strings));
-            //main.invoke(null, ((Object)strings));
             out.flush();
             out.close();
-            //System.setOut(originalOut);
-            diffFiles(trDiff, name, "logsample.txt", "log.txt");
+            diffFiles(trDiff, name, sampleLogFile, logFile);
          } catch (IOException e) {
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: " + name + 
@@ -623,7 +766,6 @@ public class Autograder {
          } catch (InvocationTargetException e) {
             Throwable et = e.getCause();
             Exception es;
-            //System.err.println("Test1");
             if(et instanceof Exception) {
                es = (Exception) et;
             } else {
@@ -662,10 +804,6 @@ public class Autograder {
             }
             if (es instanceof ExitTrappedException) {
                diffFiles(trDiff, name, "logsample.txt", "log.txt");
-               //trDiff.setScore(0);
-               ///trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
-               //                 + " its bad practice and can cause the autograder" + 
-               //                 " to crash.");
             } else {
             String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
@@ -677,10 +815,139 @@ public class Autograder {
          }
          this.allTestResults.add(trDiff, this.checksum);
          System.setOut(originalOut);
-         //System.setIn(originalIn);
       }
       this.visibility = visible;
    }
+
+
+   /**
+      Runs a diff test for a specific java program comparing resulting file output.
+      This test runs a student and sample implementation then compares the results left 
+      in specified output files. The parameter inFile should be the name of a file contianing 
+      all the std input that needs to be passed to the program. This file name should be passed 
+      without an extension. The program autoappends .in to the filename so all input files should be
+      named {inFile}.in.
+      @param name the name of the program to do diff tests on
+      @param logFile the filename of the file the students code writes to and should be compared
+      @param sampleLogFile the filename that the sample code writes to and should be used for comparison
+      @param inFile the name of the test input file to use without an extension
+   */
+   public void logFileDiffTest(String name, String logFile, String sampleLogFile,
+                               String inFile) {
+      PrintStream originalOut = System.out;
+      InputStream originalIn = System.in;
+      this.compile(name+"Sample.java");
+      TestResult trDiff = new TestResult(name + " Diff Test " + inFile,
+                                         "" + this.diffNum,
+                                         this.maxScore, this.visibility);
+      this.diffNum++;
+      String input = inFile + ".in";
+      String exOut = inFile + ".expected";
+      String acOut = inFile + ".out";
+      try {
+         File exfile = new File(exOut);
+         File infile = new File(input);
+         File acfile = new File(acOut);
+         File sample = new File(name + "Sample.java");
+         if (sample.exists() && !sample.isDirectory()) {
+            String[] procSample = {"java", name + "Sample"};
+            ProcessBuilder pbSample = new ProcessBuilder(procSample);
+            pbSample.redirectOutput(Redirect.to(exfile));
+            pbSample.redirectInput(Redirect.from(infile));
+            Process sampleProcess = pbSample.start();
+            sampleProcess.waitFor();
+         }
+         PrintStream out = new PrintStream(new FileOutputStream(acOut));
+         System.setOut(out);
+         System.setIn(new FileInputStream(input));
+         Class<?> act = Class.forName(name);
+         if (act == null) {
+            throw new ClassNotFoundException();
+         }
+         Method main = act.getMethod("main", String[].class);
+         if (main == null) {
+            throw new NoSuchMethodException();
+         }
+         String[] strings = new String[0];
+         this.runMethodWithTimeout(main, null, ((Object)strings));
+         out.flush();
+         out.close();
+         diffFiles(trDiff, name, sampleLogFile, logFile);
+      } catch (IOException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: " + name + 
+                          " could not be found to run Diff Test");
+      } catch (InterruptedException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: " +  name +
+                          " got interrupted");
+      } catch (ClassNotFoundException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: " + name + 
+                          " could not be found to run Diff Test");
+      } catch (NoSuchMethodException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: Students " +
+                          name + " Main method not found");
+      } catch (IllegalAccessException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: Students code not accessible");
+      } catch (InvocationTargetException e) {
+         Throwable et = e.getCause();
+         Exception es;
+         if(et instanceof Exception) {
+            es = (Exception) et;
+         } else {
+            es = e;
+         }
+         if (es instanceof ExitTrappedException) {
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Do not use System.exit() in your code" 
+                             + " its bad practice and can cause the autograder" + 
+                             " to crash.");
+         } else {
+            String sStackTrace = stackTraceToString(es);
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students code threw " + 
+                             es + "\n Stack Trace: " +
+                             sStackTrace);
+         }
+      } catch (TimeoutException e) {
+         trDiff.setScore(0);
+         trDiff.addOutput("ERROR: Main Method Timed out after "+ waitTime + " Seconds");
+      } catch (ExecutionException e) {
+         Throwable et = e.getCause();
+         Exception es;
+         if(et instanceof Exception) {
+            es = (Exception) et;
+         } else {
+            es = e;
+         }
+         if (es instanceof InvocationTargetException) {
+            et = es.getCause();
+            if(et instanceof Exception) {
+               es = (Exception) et;
+            } else {
+               es = e;
+            }
+         }
+         if (es instanceof ExitTrappedException) {
+            diffFiles(trDiff, name, "logsample.txt", "log.txt");
+         } else {
+            String sStackTrace = stackTraceToString(es);
+            trDiff.setScore(0);
+            trDiff.addOutput("ERROR: Students code threw " + 
+                             es + "\n Stack Trace: " +
+                             sStackTrace);
+         }
+
+      }
+      this.allTestResults.add(trDiff, this.checksum);
+      System.setOut(originalOut);
+   }
+
+
+   
 
    private void diffFiles(TestResult test, String name, String exOut, String acOut) {
       try {
@@ -717,6 +984,53 @@ public class Autograder {
                           " got interrupted");
       }
 
+   }
+
+
+   /**
+      Test to compare two files.
+      This will run a diff test on two files. It compares the 
+      files and displays the difference between the two files
+      as a test. Will give no credit if either file did not exist.
+      @param firstFile the filename of the first file to compare
+      @param secondFile the filename of the other file to compare
+    */
+   public void diffFiles(String firstFile, String secondFile) {
+      TestResult test = new TestResult("File Diff Test Between " + firstFile
+                                       + " and " + secondFile,
+                                            "" + this.diffNum,
+                                            this.maxScore, this.visibility);
+      this.diffNum++;
+      try {
+
+         String[] procDiff = {"diff", firstFile, secondFile, "-y", 
+                                    "--width=175", "-t" };
+         ProcessBuilder pbDiff = new ProcessBuilder(procDiff);
+         Process diffProcess = pbDiff.start();
+         diffProcess.waitFor();
+         Scanner s = new Scanner(diffProcess.getInputStream())
+            .useDelimiter("\\A");
+         String result = s.hasNext() ? s.next() : "";
+         if (diffProcess.exitValue() == 0) {
+            test.setScore(this.maxScore);
+            test.addOutput("SUCCESS: The Two files Matched");
+         }
+         else { 
+            test.setScore(0);
+            test.addOutput("ERROR: The two files did not match" +
+                             " Results are below:\n"
+                             +"Left: " + firstFile + " \n"
+                             +"Right: " + secondFile +" \n"
+                             + result);
+         } 
+      } catch (IOException e) {
+         test.setScore(0);
+         test.addOutput("ERROR: A file could not be found to run this test");
+      } catch (InterruptedException e) {
+         test.setScore(0);
+         test.addOutput("ERROR: Diff process got interrupted");
+      }
+      this.allTestResults.add(test, this.checksum);
    }
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
