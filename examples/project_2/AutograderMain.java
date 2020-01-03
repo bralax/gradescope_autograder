@@ -32,7 +32,7 @@ public class AutograderMain {
       gr.setScore(0.1);
       for (int i = 0; i < programs.length; i++) {
          if (programs[i].exists()) {
-            gr.diffTests(programs[i].name(), programs[i].testCount(), true);
+            gr.stdOutDiffTests(programs[i].name(), programs[i].testCount(), true);
             gr.comparisonTests(programs[i].name(), programs[i].unitCount(), null);
          }
       }

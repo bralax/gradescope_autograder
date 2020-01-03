@@ -13,9 +13,9 @@ public class AutograderMain {
    public static void main(String[] args) throws Exception {
       Autograder gr = new Autograder();
       String program = "Statistics";
-      Autograder.compiler("Point.java");
-      Autograder.compiler("DataSet.java");
-      Autograder.compiler("StatisticsSample.java");
+      gr.compile("Point.java");
+      gr.compile("DataSet.java");
+      gr.compile("StatisticsSample.java");
       gr.setScore(1.0);
       gr.setVisibility(0); //Visible
       boolean exists = gr.testSourceExists(program);
@@ -28,7 +28,7 @@ public class AutograderMain {
          String[] arg =  {"DataSet"};
          gr.hasMethodTest(program, "computeMean" , arg);
          Method m = gr.getMethod(program, "computeMean", arg);
-         gr.compTest(program, m, p, null, ds);
+         gr.compTest(program, m, p, null, null, ds);
       } else {
          exists = false;
       }

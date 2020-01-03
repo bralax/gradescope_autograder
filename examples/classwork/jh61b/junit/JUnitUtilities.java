@@ -15,7 +15,7 @@ public class JUnitUtilities {
          if (exception.getMessage() == null) 
             sb.append("Assertion failed");
          else {
-            sb.append(String.format("%s%n", exception.getMessage()));
+            sb.append(String.format("%s\n", exception.getMessage()));
             if (exception.getMessage().startsWith("Expected exception:")) {
                return sb.toString();
             }
@@ -24,7 +24,7 @@ public class JUnitUtilities {
          if (exception.getCause() != null) {
             exception = exception.getCause();
          }
-         sb.append(String.format("    /s/n", exception));
+         sb.append(String.format("    %s\n", exception));
       }
 
       for (StackTraceElement frame : exception.getStackTrace ()) {

@@ -15,11 +15,16 @@ public class TestResult {
 
 
 	public TestResult(String name, String number, double maxScore, String visibility) {
-		this.name = name;
+		this.visibility = visibility;
+      if (this.visibility.equals("hidden")) {
+         this.name = name + " (HIDDEN)";
+      } else {
+         this.name = name;
+      }
 		this.number = number;
 		this.maxScore = maxScore;
 		this.outputSB = new StringBuilder();
-		this.visibility = visibility;
+
 	}
 
 	public void setScore(double score) {
@@ -46,8 +51,8 @@ public class TestResult {
 		return "{" + String.join(",", new String[] {
 			String.format("\"%s\": \"%s\"", "name", name),
 			String.format("\"%s\": \"%s\"", "number", number),
-			String.format("\"%s\": %s", "score", score),
-			String.format("\"%s\": %s", "max_score", maxScore),
+			String.format("\"%s\": %.2f", "score", score),
+			String.format("\"%s\": %.2f", "max_score", maxScore),
 			String.format("\"%s\": \"%s\"", "visibility", visibility),
 			String.format("\"%s\": \"%s\"", "output", noQuotes)
 		}) + "}";
