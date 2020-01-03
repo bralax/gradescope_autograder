@@ -1,6 +1,7 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Scanner; 
+import java.util.Random;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,6 @@ import jh61b.grader.TestResult;
 import jh61b.grader.TestResultList; 
 
 import brandon.math.Math;
-import brandon.math.Random;
 import brandon.convert.ClassConverter;
 import brandon.convert.ClassConverterList;
 

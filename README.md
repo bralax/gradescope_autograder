@@ -107,6 +107,18 @@ If you need another test, reach out and it could be added in the future.
    2. ```public Object convert(String)``` - Each class has to be represented in a single line of text. This method is designed to take that line of text and use it to make the desired object. All arrays so far have been implemented to break instances on a space (ie the string would be {item1,item2}).
    3. ```public String toString(Object)``` - This is the reverse of the convert method. This is used to convert an unidentified object back to it's string representation. This is used for outputting information in the final test output. You might be able to get away with using the .toString method of the class but this is not always the case which is why this method exists. That is especially true with array types where you don't get a simple string representation like that.
 
-   
+## Random Numbers
+   The Autograder has built-in ways to handle random number generation to guarentee that all random number generators created in student submissions and sample implementations are seeded without asking the students to do it themselves. To use the techniques, you will have to add the following imports to the top of the students and sample java files (and remove of any import of java.util.Random):
+   ```java
+   import brandon.math.Random;
+   import brandon.math.Math;
+   ```
+   These classes contain all the same code as the built-in Math and Random libraries but sead all random number generators. The random number generator system does not handle:
+   1. Students that create a new Random number generator everytime that they run the random number generator section of their code
+   2. Students that make more random number than expected (like calling ```rand.nextInt(10) + rand.nextInt(10)``` instead of ```rand.nextInt(20)```)
+
+   See the ModifySubmission.java file in the examples folder for a sample of how to add the imports after a student uploads their submission. I would reccomend modifying the code after running a checkstyle test. Checkstyle takes off for unnecessary imports and a student submission most likely wont use both Random() and Math.random(). 
+      
 ## TODO
    * Picture diff tests need give back better output on a runtime exception
+   * Alllowing for checkstyle to ignore the first instance of a specified test
