@@ -3,7 +3,7 @@
 // (powered by Fernflower decompiler)
 //
 
-package brandon;
+package brandon.math;
 
 import java.util.Random;
 

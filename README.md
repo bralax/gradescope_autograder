@@ -38,6 +38,7 @@ Base
 * A java source does not have package declarations
 * A java source produces a correct file
 * A java source has an expected number of public methods
+* A java source has a specific field
    
 Picture Autograder
 * Two created pictures match within a specified margin
@@ -78,11 +79,34 @@ If you need another test, reach out and it could be added in the future.
    </module>
    ```
    Second you have to set **CHECKSTYLE_LISTEN_XML** at the top of Autograder.java to the location of the modified xml file.
+
+## Comparison Tests
+   The comparison tests are designed to be a simple interface for running tests that compare a students result of a method against either an expected value or a sample implementation.
+
+   These tests rely on a specially formatted file which is:
+   ```
+   {Method Name}
+   {Method Parameter Count}
+   {Method Parameter Type 1}
+   {Method Parameter Type 2}
+   .
+   .
+   .
+   {Method Parameter Type Count}
+   {Method Parameter 1}
+   {Method Parameter 2}
+   .
+   .
+   .
+   {Method Parameter Count}
+   ```
+   Each item should be in it's own row. The system can currently handle all of the primitive types (char, int, double, boolean, float, long) and String as well as their array types. If you need your method to handle parameters of types other than the ones provided, you will need to implement your own type of Class Converter for the object.
+
+   To do this, you need to create a java class type that extends the abstract class ClassConverter found in brandon/convert. See brandon/convert for example implemetations. This file should contain 3 functions:
+   1. A Constructor - This should set the baseClass and baseClassString for this class. They need to be set for correct converter to be used when running a comparison test.
+   2. ```public Object convert(String)``` - Each class has to be represented in a single line of text. This method is designed to take that line of text and use it to make the desired object. All arrays so far have been implemented to break instances on a space (ie the string would be {item1,item2}).
+   3. ```public String toString(Object)``` - This is the reverse of the convert method. This is used to convert an unidentified object back to it's string representation. This is used for outputting information in the final test output. You might be able to get away with using the .toString method of the class but this is not always the case which is why this method exists. That is especially true with array types where you don't get a simple string representation like that.
+
+   
 ## TODO
-   * Make the system for taking in parameters to a comparison test more robust.
-      * Allow for custom objects as parameters
-      * Use interfaces to allow this to work
    * Picture diff tests need give back better output on a runtime exception
-   * Inform students when there is a character encoding issue
-   * Add a test for existance of a field
-   * Add a test for no public fields

@@ -1,9 +1,7 @@
-import java.util.Random;
 import java.util.List;
 import java.util.ArrayList;
-import jh61b.grader.TestResult;
-import jh61b.grader.TestResultList; 
-import java.util.Scanner;  //to read in file of diff results
+import java.util.Scanner; 
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+
 import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler;
 import java.lang.reflect.Method;
@@ -22,22 +22,31 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.io.FileReader;
 import java.lang.ProcessBuilder.Redirect;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.JUnitCore;
+
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
+
 import java.lang.SecurityManager;
 import java.lang.SecurityException;
 import java.security.Permission;
-import brandon.Math;
-import java.util.Scanner;
+
 import com.puppycrawl.tools.checkstyle.Main;
-//import java.util.HashMap;
+
+import jh61b.grader.TestResult;
+import jh61b.grader.TestResultList; 
+
+import brandon.math.Math;
+import brandon.math.Random;
+import brandon.convert.ClassConverter;
+import brandon.convert.ClassConverterList;
+
+
 /**
    Classs representing an autograder.
    It's main method is the running of the autograder
@@ -64,6 +73,8 @@ public class Autograder {
    /**The current junit test.*/
    private TestResult currentJunitTestResult;
 
+   private static ClassConverterList conversions = new ClassConverterList();
+   
    /**The location of the checkstyle Jar.*/
    public static final String CHECKSTYLE_JAR = "/autograder/source/checkstyle/checkstyle-8.10.1-all.jar";
 
@@ -75,8 +86,6 @@ public class Autograder {
    /**The amount of time to wait before timing out a test that runs student code.*/
    private long waitTime = 1;
 
-
-   // private HashMap<String, ClassConverter> conversions;
 
    /**
       The Autograder class constructor.
@@ -92,22 +101,6 @@ public class Autograder {
       this.setVisibility(visible);
       this.setScore(score);
       this.disableSystemExit();
-      /* conversions = new HashMap<>();
-      conversions.put("int", new ClassConversion {
-            public Object convert(String arg) {
-               return Integer.parseInt(arg);
-            }
-         });
-      conversions.put("char", new ClassConversion {
-            public Object convert(String arg) {
-               return arg.charAt(0);
-            }
-         });
-      conversions.put("double", new ClassConversion {
-            public Object convert(String arg) {
-               return arg.charAt(0);
-            }
-            });*/
    }
 
    private void disableSystemExit() {
@@ -115,7 +108,7 @@ public class Autograder {
       System.setSecurityManager(securityManager) ;
    }
 
-   public void enableSystemExit() {
+   private void enableSystemExit() {
       SecurityManager mgr = System.getSecurityManager();
       if ((mgr != null) && (mgr instanceof StopExitSecurityManager)) {
          StopExitSecurityManager smgr = (StopExitSecurityManager)mgr;
@@ -147,6 +140,18 @@ public class Autograder {
       this.allTestResults.add(t, this.checksum);
    }
    
+   /** Method to add a user written converter to the autograder.
+       Converters are used for the comp tests. This allows you 
+       to make comp tests that work with parameters and returns
+       other than the base primitive types and string. A converter
+       takes a string of text and turns it into the desired object
+       and performs the reverse operation as well. See 
+       {@link brandon.convert.ClassConverter}.
+       @param c The converter to add to the autograder
+    */
+   public static void addConverter(ClassConverter c) {
+      Autograder.conversions.add(c);
+   }
    
    /** This is the wrap-up code of the autograder.
        <b>Must be the last line of the main method.</b> It
@@ -246,12 +251,15 @@ public class Autograder {
    /** Function to test if a class compiles.
        Outputs whether the file compiles as well as 
        adds an additional gradescope test for it.
+       If the program fails due to unmappable characters,
+       the test will automatically be made visible as this is 
+       a problem created on gradescope and might not be a problem
+       that a student will see on their own device.
        @param programName the name of the java file to test (without the .java) 
        @return whether the class compiled
     */
    public boolean testCompiles(String programName) {
       boolean passed = false;
-      //File source = new File(programName + ".class");
       TestResult trCompilation = new TestResult(programName + " Compiles",
                                                  "Pre-Test", this.maxScore,
                                                 this.visibility);
@@ -261,14 +269,18 @@ public class Autograder {
       ByteArrayOutputStream err = new ByteArrayOutputStream();
       int compilationResult = compiler.run(null, out, err, fileName);
       if (compilationResult != 0) {
-         trCompilation.setScore(0);
-         trCompilation.addOutput("ERROR: " + programName + 
-                                  ".java did not compile!\n");
          String output = new String(out.toByteArray());
          String error = new String(err.toByteArray());
+         if (error.contains("unmappable character")) {
+            trCompilation = new TestResult(programName + " Compiles",
+                                           "Pre-Test", this.maxScore,
+                                           "visible");
+         } 
+         trCompilation.setScore(0);
+         trCompilation.addOutput("ERROR: " + programName + 
+                                 ".java did not compile!\n");
          trCompilation.addOutput("Output: " + output + "\n"
                                  + "Error: " + error);
-      
       } 
       else {
          trCompilation.setScore(this.maxScore);
@@ -298,9 +310,7 @@ public class Autograder {
    public void testCheckstyle(String programName) {
       TestResult trCheck = new TestResult(programName + "Checkstyle Compliant",
                                           "Pre-Test",
-                                           this.maxScore, this.visibility);
-      
-      
+                                           this.maxScore, this.visibility);      
       String result;
       try {
          String proc = "java -jar " + CHECKSTYLE_JAR +
@@ -356,7 +366,6 @@ public class Autograder {
             }
          }));
          Main.main("-c", CHECKSTYLE_LISTEN_XML, programName + ".java");
-         //Main.main("-c",OA "checkstyle/check112listen.xml", programName + ".java");
       } catch(ExitTrappedException e) {
          //Ignore the exception
       } catch (Exception e) {
@@ -705,6 +714,7 @@ public class Autograder {
       String visible = this.visibility;
       this.setVisibility(0);
       for (int i = 0; i < count; i++) {
+         Math.resetRandom();
          if (i >= numVisible) {
             this.visibility = visible;
          }
@@ -841,6 +851,7 @@ public class Autograder {
                                          "" + this.diffNum,
                                          this.maxScore, this.visibility);
       this.diffNum++;
+      Math.resetRandom();
       String input = inFile + ".in";
       String exOut = inFile + ".expected";
       String acOut = inFile + ".out";
@@ -1032,6 +1043,16 @@ public class Autograder {
       }
       this.allTestResults.add(test, this.checksum);
    }
+
+
+   private static ClassConverter findConverterForObject(Object object) {
+      for(ClassConverter c: Autograder.conversions) {
+         if (c.equals(object)) {
+            return c;
+         }
+      }
+      return null;
+   }
    /**
       Method to do a test comparing the ouptut of the students method against an expected value.
       Basically this method runs the students code and calls 
@@ -1064,44 +1085,32 @@ public class Autograder {
                System.setIn(in);
                newIo.close();
             } else {
-               //InputStream in = System.in;
-               //FileInputStream newIo= new FileInputStream(stdinput);
-               //System.setIn(newIo);
                t = this.runMethodWithTimeout(m, caller, args);
-               //System.setIn(in);
-               //newIo.close();
             }
-            //Object t = m.invoke(caller, args);
             if ((t != null && t.equals(ret)) || (t == ret)) {
+               ClassConverter c = findConverterForObject(ret);
+               String output = c.toString(ret);
                trComp.setScore(this.maxScore);
                trComp.addOutput("SUCCESS: Method - "
                                 + m.getName() + 
                                 " \n" + "Returned the correct output of: " + 
-                                ret + "\n" + "On Inputs: \n");
+                                output + "\n" + "On Inputs: \n");
             
             } else {
+               ClassConverter c = findConverterForObject(ret);
+               String retout = c.toString(ret);
+               ClassConverter d = findConverterForObject(t);
+               String tout = d.toString(t);
                trComp.setScore(0);
                trComp.addOutput("FALIURE: Method - "
                                 + m.getName() + 
                                 "\n" + "Returned the incorrect output of: " + 
-                                t + " \n" + "Instead of: " + ret + 
+                                tout + " \n" + "Instead of: " + retout + 
                                 "\n" + "On Inputs: \n");
             }
             for (Object arg: args) {
-
-               if (arg instanceof char[]) {
-                  char[] vals = (char[])arg;
-                  trComp.addOutput("{ ");
-                  for(int i = 0; i < vals.length; i++) {
-                     trComp.addOutput(""+vals[i]);
-                     if (i < vals.length-1) {
-                        trComp.addOutput(", ");
-                     }
-                  }
-                  trComp.addOutput("} \n");
-               } else {
-                  trComp.addOutput("" + arg + "\n");
-               }
+               ClassConverter c = findConverterForObject(arg);
+               trComp.addOutput(c.toString(arg));
             }
          } catch (IllegalAccessException e) {
             trComp.setScore(0);
@@ -1122,7 +1131,8 @@ public class Autograder {
                              " threw " + 
                              es + "On Inputs: \n");
             for (Object arg: args) {
-               trComp.addOutput("" + arg + "\n");
+               ClassConverter c = findConverterForObject(arg);
+               trComp.addOutput(c.toString(arg));
             }
             trComp.addOutput("\n Stack Trace: " +
                              sStackTrace);
@@ -1141,7 +1151,8 @@ public class Autograder {
                              " threw " + 
                              es + "On Inputs: \n");
             for (Object arg: args) {
-               trComp.addOutput("" + arg + "\n");
+               ClassConverter c = findConverterForObject(arg);
+               trComp.addOutput(c.toString(arg));
             }
             trComp.addOutput("\n Stack Trace: " +
                              sStackTrace);
@@ -1438,34 +1449,10 @@ public class Autograder {
       if (args != null) {
          int argsCount = args.length;
          Class<?>[] ins = new Class<?>[argsCount];
-         try {
-            for (int j = 0; j < argsCount; j++) {
-               String inputop = args[j];
-               Class<?> c;
-               switch (inputop) {
-               case "int":
-                  c = int.class;
-                  break;
-               case "boolean":
-                  c = boolean.class;
-                  break;
-               case "char":
-                  c = char.class;
-                  break;
-               case "float":
-                  c = float.class;
-                  break;
-               case "char[]":
-                  c = char[].class;
-                  break;
-               default:
-                  c  = Class.forName(inputop);
-               }
-            
-               ins[j] = c;
-            }
-         } catch (ClassNotFoundException e) {
-            return null;
+         for (int j = 0; j < argsCount; j++) {
+            String inputop = args[j];
+            Class<?> c;
+            ins[j] = findConverterForObject(inputop).getClassType();
          }
          return ins;
       } else {
@@ -1497,7 +1484,6 @@ public class Autograder {
       this.compile(programName+"Sample.java");
       for (int i = 0; i < testCount; i++) {
          String input = programName + "_Comp_" + i + ".in";
-         //System.err.println(input);
          String result;
          Scanner s;
          try {
@@ -1520,37 +1506,8 @@ public class Autograder {
          for (int j = 0; j < args.length; j++) {
             Object c, d;
             String val = s.nextLine();
-            if (!ins[j].equals(String.class)) {
-               if (ins[j].equals(int.class)) {
-                  c = Integer.parseInt(val);
-                  d = Integer.parseInt(val);
-               } else if (ins[j].equals(boolean.class)) {
-                  c = Boolean.parseBoolean(val);
-                  d = Boolean.parseBoolean(val);
-               } else if (ins[j].equals(char.class)) {
-                  c = val.charAt(0);
-                  d = val.charAt(0);
-               } else if (ins[j].equals(float.class)) {
-                  c = Float.parseFloat(val);
-                  d = Float.parseFloat(val); 
-               } else if (ins[j].equals(char[].class)) {//Arrays!!
-                     String[] words = val.substring(val.indexOf("{ ")+2, val.indexOf(" }")).split(", ");
-                     char[] letters = new char[words.length];
-                     //char[] letterSample = new char[words.length];
-                     for(int w = 0; w < words.length; w++) {
-                        letters[w] = words[w].charAt(0);
-                        //letterSample[w] = words[w].charAt(0);
-                     }
-                     c = letters;
-                     d = letters.clone();
-               } else {
-                  c  = ins[j].cast(val);
-                  d  = ins[j].cast(val);
-               }
-            } else {
-               c = val;
-               d = val;
-            }
+            c = findConverterForObject(ins[j]).convert(val);
+            d = findConverterForObject(ins[j]).convert(val);
             args[j] = c;
             argsSample[j] = d;
          }
@@ -1800,6 +1757,85 @@ public class Autograder {
       return passed;
    }
 
+
+
+   /**
+      Runs a test to make sure that the student has an expected field..
+      This method checks whether the student submission has a field that 
+      matches the name provided. If a type is given, It will also check 
+      that the field, if found, is of the expected type. .
+      @param programName the name of the java class
+      @param fieldName the name of the field to check for
+      @param fieldType the expected type of the field. Ignored if null.
+      @return whether the class has the expected field
+    */
+   public boolean hasFieldTest(String programName, String fieldName, String fieldType) {
+      if (fieldType != null) {
+         String[] field = {fieldType};
+         Class<?>[] c = getClasses(field);
+         return this.hasFieldTest(programName, fieldName, c[0]);
+      } else {
+         Class<?> c = null;
+         return this.hasFieldTest(programName, fieldName, c);
+      }
+   }
+   
+   /**
+      Runs a test to make sure that the student has an expected field..
+      This method checks whether the student submission has a field that 
+      matches the name provided. If a type is given, It will also check 
+      that the field, if found, is of the expected type. .
+      @param programName the name of the java class
+      @param fieldName the name of the field to check for
+      @param fieldType the expected type of the field. Ignored if null.
+      @return whether the class has the expected field
+    */
+   public boolean hasFieldTest(String programName, String fieldName, Class<?> fieldType) {
+      boolean passed = false;
+      TestResult trMethodCount = new TestResult(programName + " Check for Field: " + fieldName, 
+                                                "" + this.diffNum , this.maxScore, this.visibility);
+      this.diffNum++;
+      try {
+         Class<?> act = Class.forName(programName);
+         if (act == null) {
+            trMethodCount.setScore(0);
+            trMethodCount.addOutput("Faliure: Class " + 
+                                    programName + " could not be found!");
+         } else {
+            Field field = act.getDeclaredField(fieldName);
+            if (field == null) {
+               trMethodCount.setScore(0);
+               trMethodCount.addOutput("Faliure: Class " 
+                                       + programName +
+                                       " does not have the expected Field!");
+            } else if (fieldType != null && !field.getType().equals(fieldType)) {
+               trMethodCount.setScore(0);
+               trMethodCount.addOutput("Faliure: Class " 
+                                       + programName +
+                                       " has field " + fieldName + " with incorrect type: " + field.getType().toString());
+            } else {
+               trMethodCount.setScore(this.maxScore);
+               trMethodCount.addOutput("SUCCESS: Class " + programName +
+                                       " has the expected Field");
+               passed = true;
+            }
+         }
+      } catch (ClassNotFoundException e) {
+         trMethodCount.setScore(0);
+         trMethodCount.addOutput("Faliure: Class " 
+                                 + programName + 
+                                 " could not be found!");
+      } catch (NoSuchFieldException e) {
+         trMethodCount.setScore(0);
+         trMethodCount.addOutput("Faliure: Class " 
+                                 + programName +
+                                 " does not have the expected Field!");
+      }
+      this.allTestResults.add(trMethodCount, this.checksum);
+      return passed;
+   }
+
+   
    /**
       Runs a test to make sure that the student code does not use ArrayLists.
       This method goes line by line and checks if any line includes an ArrayList.
@@ -1870,7 +1906,7 @@ public class Autograder {
          lineNum++;
          String out = s.nextLine();
          Scanner line = new Scanner(out);
-         if (line.hasNext() && line.next().equals("package")) {
+         if (line.hasNext() && line.next().equals("package") && out.split(" ").length == 2) {
             int curPoints = 0;
             for (TestResult t : this.allTestResults.toArray(this.checksum)) {
                curPoints += t.getScore();
