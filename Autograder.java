@@ -1544,6 +1544,89 @@ public class Autograder {
 
 
 
+/**
+      Runs a single test comparing the output of a method..
+      A comparison test is similar to a {@link #compTest(String, Method, Object, Object, String, Object...) compTest}
+      but it is comparing the output of the students program 
+      to the output of the same method for a sample program.
+      This method will compile the sample program for you.
+      The sample programs named: {Program_Name}Sample.java
+      All input files are named: {something}.in. If you are
+      using stdinput in the method, you need to name the file containing
+      the stdinput as {something}.input. The name of the file
+      should be the same as the .in file just with a different extension.
+      @param programName the program to do comparison tests on
+      @param input the filename of the file containing the comparison test information
+      @param caller the object the method should be called on (if an instance method)
+   */
+   public void comparisonTest(String programName, String input, Object caller) {
+      PrintStream original = System.out;
+      System.setOut(new PrintStream(
+         new OutputStream() {
+            public void write(int b) {
+            
+            }
+         }));
+      this.compile(programName+"Sample.java");
+      String result;
+      Scanner s;
+      try {
+         s = new Scanner(new FileReader(input));
+      } catch (FileNotFoundException e) {
+         return;
+      }
+      String method = s.next();
+      int argsCount = s.nextInt();
+      s.nextLine();
+      String[] argStrings = new String[argsCount];
+      for (int j = 0; j < argStrings.length; j++) {
+         argStrings[j] = s.next();
+      }
+      Class<?>[] ins = this.getClasses(argStrings);
+      boolean stdinput = s.nextInt() == 1;
+      s.nextLine();
+      Object[] args = new Object[argsCount];
+      Object[] argsSample = new Object[argsCount];
+      for (int j = 0; j < args.length; j++) {
+         Object c, d;
+         String val = s.nextLine();
+         c = findConverterForObject(ins[j]).convert(val);
+         d = findConverterForObject(ins[j]).convert(val);
+         args[j] = c;
+         argsSample[j] = d;
+      }
+      Method m = Autograder.getMethod(programName, method, ins);
+      Method ms = Autograder.getMethod(programName + "Sample", method, ins);
+      Object out = null;
+      String stdInputFile = null;
+      Math.resetRandom();
+      if (stdinput) {
+         stdInputFile = input + "put";
+         try {
+            InputStream in = System.in;
+            String ioFilename = input + "put";
+            FileInputStream newIo = new FileInputStream(ioFilename);
+            System.setIn(newIo);
+            out = ms.invoke(caller, argsSample);
+            newIo.close();
+            System.setIn(in);
+         } catch (Exception e) {
+            //Do nothing
+         }
+      } else {
+         try {
+            out = ms.invoke(caller, argsSample);
+         } catch (Exception e) {
+            //Do nothing
+         }
+      }
+         
+      this.compTest(programName, m, out, caller, stdInputFile, args);
+      System.setOut(original);
+   }
+
+
+
    /**
       This is a method to run a set of junit tests on a class.
       This method will run the junits and give points for

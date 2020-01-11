@@ -92,15 +92,14 @@ If you need another test, reach out and it could be added in the future.
    .
    .
    .
-   {Method Parameter Type Count}
+   {0=no stdinput, 1=stdinput}
    {Method Parameter 1}
    {Method Parameter 2}
    .
    .
    .
-   {Method Parameter Count}
    ```
-   Each item should be in it's own row. The system can currently handle all of the primitive types (char, int, double, boolean, float, long) and String as well as their array types. If you need your method to handle parameters of types other than the ones provided, you will need to implement your own type of Class Converter for the object.
+   Each item should be in it's own row. If you are using a standard input file, you will need an additional file with the same name as the comaprison file with put at the end. All comaprison files should be named {stuff}.in and the standard input file would be {stuff}.input. If you are using comparison tests (which runs multiple tests at once), the naming convention is even more specific. The files must be named {program_name}_Comp_{#}.in. The system is zero-based. The system can currently handle all of the primitive types (char, int, double, boolean, float, long) and String as well as their array types. If you need your method to handle parameters of types other than the ones provided, you will need to implement your own type of Class Converter for the object.
 
    To do this, you need to create a java class type that extends the abstract class ClassConverter found in brandon/convert. See brandon/convert for example implemetations. This file should contain 3 functions:
    1. A Constructor - This should set the baseClass and baseClassString for this class. They need to be set for correct converter to be used when running a comparison test.
