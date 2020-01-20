@@ -1918,7 +1918,56 @@ public class Autograder {
       return passed;
    }
 
-   
+      /**
+      Runs a test to make sure that the student code does not use multiple Scanners..
+      While this is not a problem for the average student, this blocks any possible redirection
+      based testing that the autograder can do (like all the diff tests). This test is designed
+      to show the test automatically if they redeclare scanners but follows the autograders visibility
+      otherwise. 
+      @param name the name of the java class
+      @return whether multiple scanners are declared or not
+    */
+   public boolean classDoesNotHaveMultipleScanners(String name) {
+      boolean passed = true;
+      TestResult trArrayList = new TestResult(name + " Check for Scanner Count", 
+                                                "" + this.diffNum , this.maxScore, this.visibility);
+      this.diffNum++;
+      String input = name + ".java";
+      String result;
+      Scanner s;
+      try {
+         s = new Scanner(new FileReader(input));
+      } catch (FileNotFoundException e) {
+         trArrayList.setScore(0);
+         trArrayList.addOutput("Test failed to open file "+input);
+         this.allTestResults.add(trArrayList, this.checksum);
+         return false;
+      }
+      int count = 0;
+      while(s.hasNextLine()) {
+         String out = s.nextLine();
+         if (out.contains("new Scanner(System.in")) {
+            count++;
+         }
+         if (count > 1) {
+            trArrayList = new TestResult(name + " Check for Scanner Count", 
+                                                "" + this.diffNum , this.maxScore, "visible");
+            trArrayList.setScore(0);
+            trArrayList.addOutput("Submissions makes multiple scanners connected to System.in. While this is not expressly \n");
+            trArrayList.addOutput("prohibited, it stops us from running any tests against this code and it is truly bad coding practice.");
+            trArrayList.addOutput("\n\n If you are unsure of how to fix this, please see an instructor and we can help you.");
+            this.allTestResults.add(trArrayList, this.checksum);
+            return true;
+         }
+      }
+      trArrayList.addOutput("This submission properly does not use multiple Scanners in their code");
+      this.allTestResults.add(trArrayList, this.checksum);
+      return false;
+   }
+
+
+
+
    /**
       Runs a test to make sure that the student code does not use ArrayLists.
       This method goes line by line and checks if any line includes an ArrayList.
