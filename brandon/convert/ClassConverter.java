@@ -22,6 +22,8 @@ public abstract class ClassConverter {
          return this.baseClass == ((ClassConverter) other).baseClass;
       } else if (other instanceof String) {
          return baseClassString.equals(other);
+      } else if (other instanceof Class<?>){
+         return this.baseClass.equals(other);
       } else {
          return this.baseClass == other.getClass();
       }

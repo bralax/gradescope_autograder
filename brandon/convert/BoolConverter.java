@@ -1,10 +1,10 @@
 package brandon.convert;
 
-public class BooleanConverter extends ClassConverter{
+public class BoolConverter extends ClassConverter{
 
-   public BooleanConverter() {
-      super.baseClass = Boolean.class;
-      super.baseClassString = "Boolean";
+   public BoolConverter() {
+      super.baseClass = boolean.class;
+      super.baseClassString = "boolean";
    }
    
    @Override

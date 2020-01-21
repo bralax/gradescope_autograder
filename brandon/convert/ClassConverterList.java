@@ -11,19 +11,24 @@ public class ClassConverterList implements Iterable<ClassConverter> {
    public ClassConverterList() {
       this.allConversions = new ArrayList<>();
       this.allConversions.add(new CharConverter());
+      this.allConversions.add(new CharacterConverter());
       this.allConversions.add(new StringConverter());
       this.allConversions.add(new FloatConverter());
       this.allConversions.add(new DoubleConverter());
       this.allConversions.add(new IntConverter());
       this.allConversions.add(new LongConverter());
+      this.allConversions.add(new BoolConverter());
       this.allConversions.add(new BooleanConverter());
       this.allConversions.add(new CharArrayConverter());
+      this.allConversions.add(new CharacterArrayConverter());
       this.allConversions.add(new StringArrayConverter());
       this.allConversions.add(new FloatArrayConverter());
       this.allConversions.add(new DoubleArrayConverter());
       this.allConversions.add(new IntArrayConverter());
       this.allConversions.add(new LongArrayConverter());
+      this.allConversions.add(new BoolArrayConverter());
       this.allConversions.add(new BooleanArrayConverter());
+      this.allConversions.add(new IntegerConverter());
    }
 
    public void add(ClassConverter c) {

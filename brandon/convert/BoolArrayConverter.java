@@ -1,16 +1,16 @@
 package brandon.convert;
 
-public class BooleanArrayConverter extends ClassConverter {
+public class BoolArrayConverter extends ClassConverter {
 
-   public BooleanArrayConverter() {
-      super.baseClass = Boolean[].class;
-      super.baseClassString = "Boolean[]";
+   public BoolArrayConverter() {
+      super.baseClass = boolean[].class;
+      super.baseClassString = "boolean[]";
    }
    
    @Override
    public Object convert(String arg) {
       String[] words = arg.substring(arg.indexOf("{ ")+2, arg.indexOf(" }")).split(", ");
-      Boolean[] ints = new Boolean[words.length];
+      boolean[] ints = new boolean[words.length];
       for(int i = 0; i < words.length; i++) {
          ints[i] = Boolean.parseBoolean(words[i]);
       }

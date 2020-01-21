@@ -82,6 +82,7 @@ public class Autograder {
    public static final String CHECKSTYLE_XML = "/autograder/source/checkstyle/check112.xml";
 
    public static final String CHECKSTYLE_LISTEN_XML = "/autograder/source/checkstyle/check112listen.xml";
+   //public static final String CHECKSTYLE_LISTEN_XML = "checkstyle/check112listen.xml";
    
    /**The amount of time to wait before timing out a test that runs student code.*/
    private long waitTime = 1;
@@ -1045,6 +1046,16 @@ public class Autograder {
    }
 
 
+   private static ClassConverter findConverterForReturn(Object object) {
+      for(ClassConverter c: Autograder.conversions) {
+         if (object.getClass().equals(c.getClassType())) {
+            return c;
+         }
+      }
+      return null;
+   }
+
+   
    private static ClassConverter findConverterForObject(Object object) {
       for(ClassConverter c: Autograder.conversions) {
          if (c.equals(object)) {
@@ -1088,7 +1099,7 @@ public class Autograder {
                t = this.runMethodWithTimeout(m, caller, args);
             }
             if ((t != null && t.equals(ret)) || (t == ret)) {
-               ClassConverter c = findConverterForObject(ret);
+               ClassConverter c = findConverterForReturn(ret);
                String output = c.toString(ret);
                trComp.setScore(this.maxScore);
                trComp.addOutput("SUCCESS: Method - "
@@ -1097,9 +1108,9 @@ public class Autograder {
                                 output + "\n" + "On Inputs: \n");
             
             } else {
-               ClassConverter c = findConverterForObject(ret);
+               ClassConverter c = findConverterForReturn(ret);
                String retout = c.toString(ret);
-               ClassConverter d = findConverterForObject(t);
+               ClassConverter d = findConverterForReturn(t);
                String tout = d.toString(t);
                trComp.setScore(0);
                trComp.addOutput("FALIURE: Method - "
@@ -1109,7 +1120,7 @@ public class Autograder {
                                 "\n" + "On Inputs: \n");
             }
             for (Object arg: args) {
-               ClassConverter c = findConverterForObject(arg);
+               ClassConverter c = findConverterForReturn(arg);
                trComp.addOutput(c.toString(arg));
             }
          } catch (IllegalAccessException e) {
@@ -1131,7 +1142,7 @@ public class Autograder {
                              " threw " + 
                              es + "On Inputs: \n");
             for (Object arg: args) {
-               ClassConverter c = findConverterForObject(arg);
+               ClassConverter c = findConverterForReturn(arg);
                trComp.addOutput(c.toString(arg));
             }
             trComp.addOutput("\n Stack Trace: " +
@@ -1151,7 +1162,7 @@ public class Autograder {
                              " threw " + 
                              es + "On Inputs: \n");
             for (Object arg: args) {
-               ClassConverter c = findConverterForObject(arg);
+               ClassConverter c = findConverterForReturn(arg);
                trComp.addOutput(c.toString(arg));
             }
             trComp.addOutput("\n Stack Trace: " +
@@ -1960,6 +1971,7 @@ public class Autograder {
             return true;
          }
       }
+      trArrayList.setScore(this.maxScore);
       trArrayList.addOutput("This submission properly does not use multiple Scanners in their code");
       this.allTestResults.add(trArrayList, this.checksum);
       return false;
@@ -2006,6 +2018,7 @@ public class Autograder {
             return false;
          }
       }
+      trArrayList.setScore(this.maxScore);
       trArrayList.addOutput("This submission properly does not use ArrayLists in their code");
       this.allTestResults.add(trArrayList, this.checksum);
       return false;
@@ -2050,6 +2063,7 @@ public class Autograder {
             return false;
          }
       }
+      trArrayList.setScore(this.maxScore);
       trArrayList.addOutput("This submission properly does not use ArrayLists in their code");
       this.allTestResults.add(trArrayList, this.checksum);
       return false;
