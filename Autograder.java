@@ -2064,7 +2064,7 @@ public class Autograder {
          }
       }
       trArrayList.setScore(this.maxScore);
-      trArrayList.addOutput("This submission properly does not use ArrayLists in their code");
+      trArrayList.addOutput("This submission properly does not use Packages in their code.");
       this.allTestResults.add(trArrayList, this.checksum);
       return false;
    }
@@ -2086,9 +2086,17 @@ public class Autograder {
 
    public Object runMethodWithTimeout(Method m, Object caller, Object... args) throws TimeoutException, ExecutionException, InterruptedException, IllegalAccessException, InvocationTargetException {
       FutureTask<Object> timeoutTask = new FutureTask<Object>(new CallableMethod(m, caller, args));
-         new Thread(timeoutTask).start();
-         Object out = timeoutTask.get(waitTime, TimeUnit.SECONDS);
-         return out;
+      Thread th = new Thread(timeoutTask);
+      th.start();
+      Object out;
+      try {
+         out = timeoutTask.get(waitTime, TimeUnit.SECONDS);
+      } catch (TimeoutException e) {
+         th.stop();
+         timeoutTask.cancel(true);
+         throw e;
+      }
+      return out;
    }
 
    /** Helper to convert classs name to the filename.
