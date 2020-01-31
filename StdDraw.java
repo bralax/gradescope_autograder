@@ -1221,40 +1221,43 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
     }
 
     /**
-     * Draws a triangle centered at (<em>x</em>, <em>y</em>) with length of <em>2 * halfLength</em> and height of <em>2 * halfHeight</em>.
+     * Draws a triangle with the specified corner locations.
      *
-     * @param  x the <em>x</em>-coordinate of the center of the trainagle
-     * @param  y the <em>y</em>-coordinate of the center of the traingle
-     * @param  halfLength one half the length of the triangle
-     * @param  halfHeight one half the height of the triangle
-     * @throws IllegalArgumentException if either {@code halfLength} or {@code halfHeight} is negative
+     * @param  x1 the <em>x</em>-coordinate of the first corner
+     * @param  y1 the <em>y</em>-coordinate of the first corner
+     * @param  x2 the <em>x</em>-coordinate of the second corner
+     * @param  y2 the <em>y</em>-coordinate of the second corner
+     * @param  x3 the <em>x</em>-coordinate of the third corner
+     * @param  y3 the <em>y</em>-coordinate of the third corner
      */
-    public static void triangle(double x, double y, double halfLength, double halfHeight) {
-    	if (halfHeight <= 0 || halfLength <= 0) throw new IllegalArgumentException("half height or half length must be nonnegative");
-      DummyTriangle d = new DummyTriangle(penColor, false);
-      d.setCoordinates(x, y, halfLength, halfHeight);
-      moves.add(d);
-      /*else polygon(new double[] {(x - halfLength), (x + halfLength), x }, new double[] {(y + halfHeight), (y + halfHeight) , (y - halfHeight)} );
-        draw();*/
+    public static void triangle(double x1, double y1, double x2, double y2, double x3, double y3) {
+       //polygon(new double[] {x1, x2, x3}, new double[] {y1, y2, y3});
+       DummyTriangle d = new DummyTriangle(penColor, false);
+       d.setCoordinates(x1, y1, x2, y2, x3, y3);
+       moves.add(d);
+
     }
-    
+
+   
+
     /**
-     * Draws a filled triangle centered at (<em>x</em>, <em>y</em>) with length of <em>2 * halfLength</em> and height of <em>2 * halfHeight</em>.
+     * Draws a filled triangle with the specified corner locations.
      *
-     * @param  x the <em>x</em>-coordinate of the center of the triangle
-     * @param  y the <em>y</em>-coordinate of the center of the triangle
-     * @param  halfLength one half the length of the triangle
-     * @param  halfHeight one half the height of the triangle
-     * @throws IllegalArgumentException if either {@code halfLength} or {@code halfHeight} is negative
+     * @param  x1 the <em>x</em>-coordinate of the first corner
+     * @param  y1 the <em>y</em>-coordinate of the first corner
+     * @param  x2 the <em>x</em>-coordinate of the second corner
+     * @param  y2 the <em>y</em>-coordinate of the second corner
+     * @param  x3 the <em>x</em>-coordinate of the third corner
+     * @param  y3 the <em>y</em>-coordinate of the third corner
      */
-    public static void filledTriangle(double x, double y, double halfLength, double halfHeight) {
-    	if (halfHeight <= 0 || halfLength <= 0) throw new IllegalArgumentException("half height or half length must be nonnegative");
+    public static void filledTriangle(double x1, double y1, double x2, double y2, double x3, double y3) {
       DummyTriangle d = new DummyTriangle(penColor, true);
-      d.setCoordinates(x, y, halfLength, halfHeight);
+      d.setCoordinates(x1, y1, x2, y2, x3, y3);
       moves.add(d);
-      /*else filledPolygon(new double[] {(x - halfLength), (x + halfLength), x }, new double[] {(y + halfHeight), (y + halfHeight) , (y - halfHeight)} );
-        draw();*/
+      //filledPolygon(new double[] {x1, x2, x3}, new double[] {y1, y2, y3});
     }
+
+
     
      /**
      * Draws a rectangle of the specified size, centered at (<em>x</em>, <em>y</em>).

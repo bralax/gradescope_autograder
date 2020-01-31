@@ -136,6 +136,7 @@ public class GatewayCheckstyleListener implements AuditListener {
             List<Integer> rows = new ArrayList<>();
             rows.add(this.checks.get(0).getLine());
             t.addOutput(createLine(this.checks.get(0), rows));
+            t.setScore(maxScore - value);
             GatewayCheckstyleListener.allResults.add(t);
             //Only one checkstyle error
          } else {

@@ -76,7 +76,7 @@ public class Autograder {
    private static ClassConverterList conversions = new ClassConverterList();
    
    /**The location of the checkstyle Jar.*/
-   public static final String CHECKSTYLE_JAR = "/autograder/source/checkstyle/checkstyle-8.10.1-all.jar";
+   public static final String CHECKSTYLE_JAR = "/autograder/source/checkstyle/checkstyle-8.28-all.jar";
 
    /**The location of the checkstyle xml.*/
    public static final String CHECKSTYLE_XML = "/autograder/source/checkstyle/check112.xml";
@@ -1509,7 +1509,7 @@ public class Autograder {
          for (int j = 0; j < argStrings.length; j++) {
             argStrings[j] = s.next();
          }
-         Class<?>[] ins = this.getClasses(argStrings);
+         Class<?>[] ins = Autograder.getClasses(argStrings);
          boolean stdinput = s.nextInt() == 1;
          s.nextLine();
          Object[] args = new Object[argsCount];
@@ -1593,7 +1593,7 @@ public class Autograder {
       for (int j = 0; j < argStrings.length; j++) {
          argStrings[j] = s.next();
       }
-      Class<?>[] ins = this.getClasses(argStrings);
+      Class<?>[] ins = Autograder.getClasses(argStrings);
       boolean stdinput = s.nextInt() == 1;
       s.nextLine();
       Object[] args = new Object[argsCount];
@@ -2079,6 +2079,7 @@ public class Autograder {
     */
    public void addTestResult(String name, boolean success, String extraOutput) {
       TestResult tr = new TestResult(name, ""+this.diffNum, this.maxScore, this.visibility);
+      this.diffNum++;
       tr.setScore((success) ? this.maxScore : 0);
       tr.addOutput(extraOutput);
       this.allTestResults.add(tr, this.checksum);
@@ -2157,7 +2158,7 @@ public class Autograder {
       @param score the new score value of a test
     */
    public void setScore(double score) {
-      if (score < 0) {
+      if (score < 0.0) {
          score = 0.1;
       }
       this.maxScore = score;

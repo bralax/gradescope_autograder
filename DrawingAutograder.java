@@ -47,7 +47,7 @@ public class DrawingAutograder extends Autograder {
                                String inFile) {
       String name = "Drawing Comparison Test";
       Object argList = (Object) new String[0];
-      Class[] args = {String[].class};
+      Class<?>[] args = {String[].class};
       PrintStream original = System.out;
       InputStream origin = System.in;
       System.setOut(new PrintStream(
@@ -141,7 +141,7 @@ public class DrawingAutograder extends Autograder {
                                String inFile) {
       String name = "Drawing Comparison Test";
       Object argList = (Object) new String[0];
-      Class[] args = {String[].class};
+      Class<?>[] args = {String[].class};
       PrintStream original = System.out;
       InputStream origin = System.in;
       System.setOut(new PrintStream(
@@ -172,7 +172,7 @@ public class DrawingAutograder extends Autograder {
                int out = this.compare(opts, exp, order);
                if (out == -1) {
                   this.addTestResult(name, true, "The Student submission creates the same shapes as the sample \n" +
-                                     "Make sure visually that the shapes are alll in the correct locations");
+                                     "Make sure visually that the shapes are all in the correct locations");
                } else {
                   if (order) {
                      this.addTestResult(name, false, "The Student and Sample did not match at position #"+out+
@@ -215,7 +215,7 @@ public class DrawingAutograder extends Autograder {
                                String inFile) {
       String name = "Drawing Contains Shape Test";
       Object argList = (Object) new String[0];
-      Class[] args = {String[].class};
+      Class<?>[] args = {String[].class};
       PrintStream original = System.out;
       InputStream origin = System.in;
       System.setOut(new PrintStream(
@@ -240,6 +240,142 @@ public class DrawingAutograder extends Autograder {
             } else {
                   this.addTestResult(name, false, "The Student submission is missing the expected shape of \n" 
                                      + exp.toString());
+            }
+         } else {
+            this.addTestResult(name, false, "ERROR - Student Submission Missing a Main Method");
+         }
+      } catch(InvocationTargetException e) {
+         Throwable et = e.getCause();
+         Exception es;
+         if(et instanceof Exception) {
+            es = (Exception) et;
+         } else {
+            es = e;
+         }
+         this.addTestResult(name, false, "ERROR: "+p+" Threw " + es + " With Stack Trace: " + stackTraceToString(es));
+      } catch(IllegalAccessException e) {
+         this.addTestResult(name, false, "ERROR: Students Code Not Accessible");
+      } catch(IOException e) {
+         this.addTestResult(name, false, "ERROR: Input File Failed to Open Or Close");
+      }
+      System.setIn(origin);
+      System.setOut(original);
+   }
+
+
+      /** Test to check whether the students code draws at least an expected 
+          number of shapes. This could be a useful test as each shape can only be 
+          one color so there is a minimum number of shapes in order to possibly
+          draw the whole image and if it is less than that amount then the
+          submission must be missing part of the drawing.
+      @param p the name of the students program to run
+      @param expCount the number of shapes expected to have been drawn
+      @param inFile the std input to be passed to the main method of the code
+    */
+   public void drawingShapeCountTest(String p,
+                               int expCount,
+                               String inFile) {
+      String name = "Drawing Shape Count Test";
+      Object argList = (Object) new String[0];
+      Class<?>[] args = {String[].class};
+      PrintStream original = System.out;
+      InputStream origin = System.in;
+      System.setOut(new PrintStream(
+        new OutputStream() {
+           public void write(int b) {}
+        }));
+      try {
+         StdDraw.clearMoveList();
+         if (inFile != null && inFile != "") {
+            System.setIn(new FileInputStream(inFile));
+         }
+         Method m  = Autograder.getMethod(p, "main", args);
+         if (m != null) {
+            m.invoke(null, argList);
+            ArrayList<DummyShape> opts = StdDraw.getMoveList();
+            StdDraw.clearMoveList();
+            System.in.close();
+            boolean out = opts.size() >= expCount;
+            if (out) {
+               this.addTestResult(name, true, "The Student submission creates at least the expected number of shapes\n" +
+                                  "They drew " + opts.size() + "and the expectation was at least " + expCount + " shapes");
+            } else {
+               this.addTestResult(name, false, "The Student submission did not create at least the expected number of shapes\n" +
+                                  "They drew " + opts.size() + "and the expectation was at least " + expCount + " shapes");
+            }
+         } else {
+            this.addTestResult(name, false, "ERROR - Student Submission Missing a Main Method");
+         }
+      } catch(InvocationTargetException e) {
+         Throwable et = e.getCause();
+         Exception es;
+         if(et instanceof Exception) {
+            es = (Exception) et;
+         } else {
+            es = e;
+         }
+         this.addTestResult(name, false, "ERROR: "+p+" Threw " + es + " With Stack Trace: " + stackTraceToString(es));
+      } catch(IllegalAccessException e) {
+         this.addTestResult(name, false, "ERROR: Students Code Not Accessible");
+      } catch(IOException e) {
+         this.addTestResult(name, false, "ERROR: Input File Failed to Open Or Close");
+      }
+      System.setIn(origin);
+      System.setOut(original);
+   }
+
+
+
+   /** Test to check whether the students code draws at least an expected 
+          number of shapes. This could be a useful test as each shape can only be 
+          one color so there is a minimum number of shapes in order to possibly
+          draw the whole image and if it is less than that amount then the
+          submission must be missing part of the drawing.
+      @param p the name of the students program to run
+      @param expCount the number of shapes expected to have been drawn
+      @param inFile the std input to be passed to the main method of the code
+    */
+   public void drawingSizeTest(String p,
+                               int expWidth,
+                               int expHeight,
+                               String inFile) {
+      String name = "Drawing Canvas Size Test";
+      Object argList = (Object) new String[0];
+      Class<?>[] args = {String[].class};
+      PrintStream original = System.out;
+      InputStream origin = System.in;
+      System.setOut(new PrintStream(
+        new OutputStream() {
+           public void write(int b) {}
+        }));
+      try {
+         StdDraw.clearMoveList();
+         if (inFile != null && inFile != "") {
+            System.setIn(new FileInputStream(inFile));
+         }
+         Method m  = Autograder.getMethod(p, "main", args);
+         if (m != null) {
+            m.invoke(null, argList);
+            StdDraw.clearMoveList();
+            System.in.close();
+            boolean out1 = StdDraw.getWidth() == expWidth;
+            boolean out2 = StdDraw.getHeight() == expHeight;
+            if (out1 && out2) {
+               this.addTestResult(name, true, "The Student submission creates a canvas of the correct size\n" +
+                                  "They drew a " + StdDraw.getWidth() + "x" + StdDraw.getHeight() +" and the expectation was"+
+                                  expWidth + "x" + expHeight);
+            } else if (out1 && !out2) {
+               this.addTestResult(name, false, "The Student submission creates a canvas of an incorrect height\n" +
+                                  "They drew a " + StdDraw.getWidth() + "x" + StdDraw.getHeight() +" and the expectation was"+
+                                  expWidth + "x" + expHeight);
+            } else if (!out1 && out2) {
+               this.addTestResult(name, false, "The Student submission creates a canvas of an incorrect width\n" +
+                                  "They drew a " + StdDraw.getWidth() + "x" + StdDraw.getHeight() +" and the expectation was"+
+                                  expWidth + "x" + expHeight);
+            } else {
+               this.addTestResult(name, false, "The Student submission creates a canvas of an incorrect width and height\n" +
+                                  "They drew a " + StdDraw.getWidth() + "x" + StdDraw.getHeight() +" and the expectation was"+
+                                  expWidth + "x" + expHeight);
             }
          } else {
             this.addTestResult(name, false, "ERROR - Student Submission Missing a Main Method");

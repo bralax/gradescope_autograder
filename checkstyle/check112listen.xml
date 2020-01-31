@@ -7,9 +7,9 @@
 
   Checkstyle configuration for 500.112: Gateway Computing
   at Johns Hopkins University, sections taught in Java.
-  Based on sun_checks.xml example from checkstyle 5.6
-  Simplified for beginners, and compatible with jGrasp CSD
-
+  Similar to the configuration for 601.226 Data Structures.
+  Simplified for beginners, and compatible with jGrasp CSD.
+  
 -->
 
 <module name="Checker">
@@ -17,96 +17,92 @@
   <module name="GatewayCheckstyleListener">
   </module>
 
-  <!--
-        If you set the basedir property below, then all reported file
-        names will be relative to the specified directory. See
-        http://checkstyle.sourceforge.net/5.x/config.html#Checker
-
-        <property name="basedir" value="${basedir}"/>
-    -->
-
-    <!-- Checks that a package-info.java file exists for each package.   -->
-    <!-- See http://checkstyle.sf.net/config_javadoc.html#JavadocPackage -->
-<!--    <module name="JavadocPackage"/> --> 
-<!-- [phf] removed because it's useless to explain in 226 -->
-
-    <!-- Checks whether files end with a new line.                        -->
-    <!-- See http://checkstyle.sf.net/config_misc.html#NewlineAtEndOfFile -->
-<!--    <module name="NewlineAtEndOfFile"/> --> 
-<!-- [phf] removed because apparently it's hard to work around on Windows? -->
-
     <!-- Checks that property files contain the same keys.         -->
     <!-- See http://checkstyle.sf.net/config_misc.html#Translation -->
     <module name="Translation"/>
     
-    <!-- Checks for Size Violations.                    -->
-    <!-- See http://checkstyle.sf.net/config_sizes.html -->
+<!-- Checks for Size Violations.                    -->
+<!-- maximum 2000 lines by default                  -->
+<!-- See http://checkstyle.sf.net/config_sizes.html -->
     <module name="FileLength"/>
+    <module name="LineLength"/> <!-- default 80 chars -->
     
-    <!-- Checks for whitespace                               -->
+    <!-- Checks for whitespace, not tabs                     -->
     <!-- See http://checkstyle.sf.net/config_whitespace.html -->
     <module name="FileTabCharacter"/>
-
-    <!-- Miscellaneous other checks.                   -->
-    <!-- See http://checkstyle.sf.net/config_misc.html -->
-<!--    <module name="RegexpSingleline"> -->
-<!--       <property name="format" value="\s+$"/>  -->
-<!--       <property name="minimum" value="0"/>  -->
-<!--       <property name="maximum" value="0"/> -->
-<!--       <property name="message" value="Line has trailing  spaces."/>  -->
-<!--    </module>  -->
-<!-- [js] removed because it's really annoying  -->
-
-    <!-- Checks for Headers                                -->
-    <!-- See http://checkstyle.sf.net/config_header.html   -->
-    <!-- <module name="Header"> -->
-    <!--   <property name="headerFile" value="${checkstyle.header.file}"/> -->
-    <!--   <property name="fileExtensions" value="java"/> -->
-    <!-- </module> -->
 
     <module name="TreeWalker">
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
-        <module name="JavadocMethod"/>
-        <module name="JavadocType"/>
-        <module name="JavadocVariable"/>
-        <module name="JavadocStyle"/>
+        <module name="InvalidJavadocPosition"/>
+        <module name="JavadocMethod">
+          <property name="scope" value="protected"/>
+        </module>
+        <module name="JavadocType">
+          <property name="scope" value="protected"/>
+        </module>
+        <module name="JavadocVariable">
+          <property name="scope" value="protected"/>
+        </module>
+        <module name="JavadocStyle">
+          <property name="scope" value="protected"/>
+          <!-- empty tags are not okay -->
+          <property name="checkEmptyJavadoc" value="true"/>
+        </module>
+<module name="MissingJavadocMethod">
+  <property name="scope" value="protected"/>
+  <property name="ignoreMethodNamesRegex" value="main"/>
+</module>
+<module name="MissingJavadocType">
+  <property name="scope" value="protected"/>
+</module>
 
 
         <!-- Checks for Naming Conventions.                  -->
         <!-- See http://checkstyle.sf.net/config_naming.html -->
         <module name="ConstantName"/>
-        <module name="LocalFinalVariableName"/>
+        <module name="LocalFinalVariableName">
+                <property name="format" value="^[A-Z][A-Z0-9]*$"/>
+              </module>
         <module name="LocalVariableName"/>
         <module name="MemberName"/>
         <module name="MethodName"/>
-        <module name="PackageName"/>
+        <module name="PackageName">
+          <property name="format"
+                    value="^[a-z]+([a-zA-Z_][a-zA-Z0-9_]*)*$"/>
+        </module>
         <module name="ParameterName"/>
         <module name="StaticVariableName"/>
         <module name="TypeName"/>
+        <module name="CatchParameterName"/> <!-- not in 5.9 -->
+        <module name="ClassTypeParameterName"/>
+        <module name="InterfaceTypeParameterName"/>
+        <module name="MethodTypeParameterName"/>
 
-
-        <!-- Checks for imports                              -->
+        <!-- enforce sane imports -->
         <!-- See http://checkstyle.sf.net/config_import.html -->
         <module name="AvoidStarImport"/>
-        <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
+        <module name="IllegalImport"/> <!-- default sun.* packages -->
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
 
+        <!-- size violations -->
+        <!-- See http://checkstyle.sf.net/config_sizes.html -->        
+        <module name="AnonInnerLength"/> <!-- default 20 lines -->
+        <module name="MethodLength"/> <!-- default 150 lines -->
+        <module name="ParameterNumber"/> <!-- default 7 parameters -->
+        <module name="OuterTypeNumber"/> <!-- default 1 per file -->
 
-        <!-- Checks for Size Violations.                    -->
-        <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength"/>
-        <module name="MethodLength"/>
-        <module name="ParameterNumber"/>
-
-
-        <!-- Checks for whitespace                               -->
-        <!-- See http://checkstyle.sf.net/config_whitespace.html -->
+        <!-- whitespace checks -->
+        <module name="EmptyForInitializerPad"/>
         <module name="EmptyForIteratorPad"/>
+        <module name="EmptyLineSeparator">
+            <property name="allowNoEmptyLineBetweenFields" value="true" />
+        </module>
         <module name="GenericWhitespace"/>
         <module name="MethodParamPad"/>
+        <module name="NoLineWrap"/>
         <module name="NoWhitespaceAfter">
                 <property name="tokens" value="DOT, ARRAY_INIT, INC,
         DEC, UNARY_MINUS, UNARY_PLUS, DOT, ARRAY_DECLARATOR"/>
@@ -117,85 +113,93 @@
         <module name="ParenPad"/>
         <module name="TypecastParenPad"/>
         <module name="WhitespaceAfter"/>
-        <module name="WhitespaceAround"/>
+        <module name="WhitespaceAround">
+           <!-- empty methods look better this way -->
+           <property name="allowEmptyMethods" value="true" />
+           <property name="allowEmptyConstructors" value="true" />
+        </module>
 
-
-        <!-- Modifier Checks                                    -->
+        <!-- sane use of modifiers (sane is a relative term) -->
         <!-- See http://checkstyle.sf.net/config_modifiers.html -->
         <module name="ModifierOrder"/>
         <module name="RedundantModifier"/>
 
-
-        <!-- Checks for blocks. You know, those {}'s         -->
+        <!-- block checks -->
         <!-- See http://checkstyle.sf.net/config_blocks.html -->
         <module name="AvoidNestedBlocks"/>
         <module name="EmptyBlock"/>
+        <module name="EmptyCatchBlock"/> <!-- not in 5.9 -->
         <module name="LeftCurly"/>
         <module name="NeedBraces"/>
         <module name="RightCurly">
           <property name = "option" value = "alone" />
             <property  name="tokens" value="LITERAL_ELSE, METHOD_DEF"/>
           </module>
-          <!-- [js] set property for jGRASP compatibility with else -->
-
-        <!-- Checks for common coding problems               -->
-        <!-- See http://checkstyle.sf.net/config_coding.html -->
-<!--        <module name="AvoidInlineConditionals"/>  -->
-<!-- [js] removed so beginners can learn it -->
-<!--        <module name="DoubleCheckedLocking"/>  -->
-<!-- [js] removed because it was causing a run-time error -->
+       <!-- [js] set property for jGRASP compatibility with else    -->
+          
+        <!-- coding style -->
+        <module name="ArrayTrailingComma"/>
+        <!--
+            I want them to use ?: every now and then; sadly
+            there's no option to just disallow complicated ones.
+        -->
+        <!--<module name="AvoidInlineConditionals"/>-->
+        <module name="CovariantEquals"/> <!-- avoid accidental overloading -->
+        <module name="DeclarationOrder"/> <!-- standardize classes -->
+        <module name="DefaultComesLast"/> <!-- standardize switch -->
+        <module name="EmptyStatement"/>
+        <module name="EqualsAvoidNull"/>
 <!--        <module name="EqualsHashCode"/> -->
 <!-- [js] removed to not confuse beginners -->
-        <module name="EmptyStatement"/>
-        <module name="HiddenField"/>
-        <module name="IllegalInstantiation"/>
-        <module name="InnerAssignment"/>
-<!--        <module name="MagicNumber"/> -->
-<!-- [sm] removed since it was not helping beginners -->
-        <module name="MissingSwitchDefault"/>
-<!--        <module name="RedundantThrows"/> --> 
-<!-- [phf] removed because it causes the "Unable to get class information" problem -->
+        <module name="ExplicitInitialization"/> <!-- avoid initializing twice -->
+        <module name="HiddenField"> <!-- softened for constructors, discourage other places -->
+           <property name="ignoreConstructorParameter" value="true"/>
+        </module>
+        <module name="IllegalCatch"/> <!-- avoid overly generic catch -->
+        <module name="IllegalThrows"/> <!-- avoid overly generic throw -->
+        <module name="InnerAssignment"/> <!-- avoid assignments as expressions -->
+        <!--<module name="MagicNumber"/>--> <!-- more trouble than it's worth, we can still grade them down but we don't have to force ridiculous constant declarations -->
+        <module name="MissingSwitchDefault"/> <!-- standardize switch -->
+        <module name="ModifiedControlVariable"/> <!-- TODO: should for-each be different? -->
+        <module name="MultipleVariableDeclarations"/>
+        <module name="NestedTryDepth"/> <!-- no try inside a try -->
+        <module name="NoClone"/>
+        <module name="NoFinalizer"/>
+        <module name="OneStatementPerLine"/>
+        <module name="OverloadMethodsDeclarationOrder"/>
+        <module name="RequireThis"/> <!-- emphasize non-local stuff -->
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
-        <module name="CovariantEquals"/> 
-<!-- [phf] added to avoid accidental overloading -->
-        <module name="ModifiedControlVariable"/> 
-<!-- [phf] added to avoid changing for variable -->
-        <module name="StringLiteralEquality"/> 
-<!-- [phf] added to remind people of equals() -->
-        <module name="IllegalCatch"/> 
-<!-- [phf] added to avoid overly generic catch -->
-        <module name="IllegalThrows"/> 
-<!-- [phf] added to avoid overly generic throw -->
-        <module name="DeclarationOrder"/> 
-<!-- [phf] added to standardize classes -->
-        <module name="DefaultComesLast"/> 
-<!-- [phf] added to standardize switch -->
-        <module name="RequireThis"/> 
-<!-- [phf] added to emphasize non-local data -->
+        <module name="StringLiteralEquality"/> <!-- reminder to use equals() -->
 
-        <!-- Checks for class design                         -->
-        <!-- See http://checkstyle.sf.net/config_design.html -->
-<!--        <module name="DesignForExtension"/> --> 
-<!-- [phf] removed because it's a dubious convention and hard to explain -->
-        <module name="FinalClass"/> 
+        <!-- annotation checks -->
+        <module name="AnnotationLocation"/> <!-- standardize classes --> <!-- not in 5.9 -->
+
+        <!-- design checks -->
+        <!--<module name="DesignForExtension"/>--> <!-- too hard to explain -->
+        <module name="FinalClass"/>
 <!--        <module name="HideUtilityClassConstructor"/> -->
 <!-- [js] removed for beginners -->
         <module name="InterfaceIsType"/>
-<!--        <module name="VisibilityModifier"/> --> 
-<!-- [phf] removed because it's too restrictive for nested classes -->
+        <module name="MutableException"/>
+        <module name="OneTopLevelClass"/>
+        <module name="ThrowsCount">
+            <property name="ignorePrivateMethods" value="false"/> <!-- not in 5.9 -->
+        </module>
+        <!--<module name="VisibilityModifier"/>--> <!-- too restrictive for nested classes -->
 
+        <!-- code complexity checks -->
+	<!--<module name="ClassDataAbstractionCoupling"/>--> <!-- too restrictive for polymorphic test drivers that make instances of a lot of classes -->
+        <module name="ClassFanOutComplexity"/> <!-- TODO: on probation -->
+        <module name="CyclomaticComplexity">
+          <property name="max" value="15"/>
+                </module> 
+<!-- [phf] added to keep methods managable, [js] increased from 10 to 15 -->
+        <module name="NPathComplexity"/> <!-- TODO: on probation -->
 
-        <!-- Miscellaneous other checks.                   -->
-        <!-- See http://checkstyle.sf.net/config_misc.html -->
-        <module name="ArrayTypeStyle"/>
-<!--        <module name="FinalParameters"/> --> 
-<!-- [phf] removed because somewhat ruins pass-by-value -->
-        <module name="TodoComment"/>
-        <module name="UpperEll"/>
+        <!-- miscellaneous checks -->
 
-<!-- [phf] added to enforce consistent indentation -->
-        <module name="Indentation">
+      <module name="Indentation">
           <property name="basicOffset" value="3"/>
           <property name="caseIndent" value="3"/>
           <property name="throwsIndent" value="3"/>
@@ -204,12 +208,14 @@
         </module> 
 <!-- [js] changed values for beginners to be consistent with jGRASP CSD -->
 
-        <!-- [phf] various additions -->
-        <module name="CyclomaticComplexity">
-          <property name="max" value="15"/>
-                </module> 
-<!-- [phf] added to keep methods managable, [js] increased from 10 to 15 -->
+<!--    <module name="CommentsIndentation"/> -->
+<!-- [js] can be annoying -->
 
+        <!--<module name="FinalParameters"/>--> <!-- ruins pass-by-value -->
+      
+        <module name="OuterTypeFilename"/>
+        <module name="TodoComment"/>
+        <module name="UpperEll"/>
     </module>
 
 </module>
