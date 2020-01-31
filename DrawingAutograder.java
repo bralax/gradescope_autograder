@@ -326,13 +326,10 @@ public class DrawingAutograder extends Autograder {
 
 
 
-   /** Test to check whether the students code draws at least an expected 
-          number of shapes. This could be a useful test as each shape can only be 
-          one color so there is a minimum number of shapes in order to possibly
-          draw the whole image and if it is less than that amount then the
-          submission must be missing part of the drawing.
+   /** Test to check whether the students code sets the stddraw canvas to the expected size.
       @param p the name of the students program to run
-      @param expCount the number of shapes expected to have been drawn
+      @param expWidth the desired width of the drawing canvas
+      @param expHeight the desired height of the drawing canvas
       @param inFile the std input to be passed to the main method of the code
     */
    public void drawingSizeTest(String p,
