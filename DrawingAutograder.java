@@ -10,6 +10,8 @@ import java.io.PrintStream;
 import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.util.Comparator;
+import java.awt.Color;
 
 /**
    Example child class of the Autograder.
@@ -63,6 +65,7 @@ public class DrawingAutograder extends Autograder {
          if (m != null) {
             m.invoke(null, argList);
             ArrayList<DummyShape> opts = StdDraw.getMoveList();
+            opts.sort(new SortShapes());
             StdDraw.clearMoveList();
             System.in.close();
             if (inFile != null && inFile != "") {
@@ -71,6 +74,7 @@ public class DrawingAutograder extends Autograder {
             m  = Autograder.getMethod(p+"Sample", "main", args);
             m.invoke(null, argList);
             ArrayList<DummyShape> sampleOpts = StdDraw.getMoveList();
+            sampleOpts.sort(new SortShapes());
             StdDraw.clearMoveList();
             for (DummyShape d : sampleOpts) {
                d.setSize(size);
@@ -139,6 +143,7 @@ public class DrawingAutograder extends Autograder {
                                boolean size,
                                boolean order,
                                String inFile) {
+      exp.sort(new SortShapes());
       String name = "Drawing Comparison Test";
       Object argList = (Object) new String[0];
       Class<?>[] args = {String[].class};
@@ -157,6 +162,7 @@ public class DrawingAutograder extends Autograder {
          if (m != null) {
             m.invoke(null, argList);
             ArrayList<DummyShape> opts = StdDraw.getMoveList();
+            opts.sort(new SortShapes());
             StdDraw.clearMoveList();
             System.in.close();
             for (DummyShape d : exp) {
@@ -455,5 +461,22 @@ public class DrawingAutograder extends Autograder {
          sb.append("\n");
       } 
       return sb.toString();
+   }
+
+   private class SortShapes implements Comparator<DummyShape> {
+      public int compare(DummyShape t1, DummyShape t2) {
+         int comp = t1.getName().compareTo(t2.getName());
+         if (comp == 0) {
+            comp = t1.getColor().getRGB() - t2.getColor().getRGB();
+         }
+         if (comp == 0) {
+            if (t1.getFilled() && !t2.getFilled()) {
+               comp = 1;
+            } else if (!t1.getFilled() && t2.getFilled()) {
+               comp = -1;
+            }
+         }
+         return comp;
+      }
    }
 }

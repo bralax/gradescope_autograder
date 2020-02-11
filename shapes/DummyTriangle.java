@@ -52,7 +52,7 @@ public class DummyTriangle extends DummyShape {
                && Math.abs(this.x2 - d.x2) <= DummyShape.margin
                && Math.abs(this.y2 - d.y2) <= DummyShape.margin
                && Math.abs(this.x3 - d.x3) <= DummyShape.margin
-               && Math.abs(this.y3 - d.y3) <= DummyShape.margin
+               && Math.abs(this.y3 - d.y3) <= DummyShape.margin;
          }
       } else if (o instanceof DummyShape) {
          DummyShape d = (DummyShape) o;
