@@ -5,4 +5,4 @@ all: Autograder.class AutograderMain.class
 docs:
 	./test.sh
 clean:
-	rm -r *~ *.class *.out 
+	rm -r *~ *.class *.out */*/*.class

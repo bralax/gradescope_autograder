@@ -1371,6 +1371,7 @@ public class Autograder {
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
                                          this.maxScore, this.visibility);
+      this.diffNum++;
       Class<?> args[] = getClasses(argTypes);
       if (args != null) {
          try {
@@ -1432,6 +1433,7 @@ public class Autograder {
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
                                          this.maxScore, this.visibility);
+      this.diffNum++;
       Class<?> args[] = argTypes;
       if (args != null) {
          try {
@@ -1477,6 +1479,138 @@ public class Autograder {
 
 
 
+   /** Method to test whether a specific constructor exists.
+       This method takes in the name of the class and a list
+       of expected parameters and checks if the expected constructor exists. 
+       It then adds a TestResult of whether the constructor exists.
+       @param className the name of the java class
+       @param argTypes the argument classes (in string form) that the constructor takes in
+       @return true if the constructor exists, false otherwise
+    */
+   public boolean hasConstructorTest(String className, 
+                              String[] argTypes) {
+      boolean status = false;
+      String testName = "";
+      if (argTypes != null) {
+         testName = className + " Constructor Exists Test  (" + argTypes.length + "  Parameters)";
+      } else {
+         testName = className + " Constructor Exists Test  (0 Parameters)";
+      }
+      TestResult trHas = new TestResult(testName,
+                                        "" + this.diffNum,
+                                        this.maxScore, this.visibility);
+      this.diffNum++;
+      Class<?> args[] = getClasses(argTypes);
+      if (args != null) {
+         try {
+            Class<?> c = Class.forName(className);
+            if (c == null) {
+               trHas.setScore(0);
+               trHas.addOutput("ERROR: Class - " + className 
+                               + " does not exist");
+            } else {
+               Constructor<?> m = c.getConstructor(args);
+               if (m == null) {
+                  throw new NoSuchMethodException();
+               }
+               trHas.setScore(this.maxScore);
+               trHas.addOutput("SUCCESS: Class - " + className
+                               + "\nHas a constructor "
+                               + "with input parameters:\n");
+               if (argTypes != null && argTypes.length > 0) {
+                  for (String arg : argTypes) {
+                     trHas.addOutput(arg +"\n");
+                  }
+               }
+               status = true;
+            }
+         } catch(Exception e) {
+            trHas.setScore(0);
+            trHas.addOutput("ERROR: Class - " + className
+                            + "\nDoes not have a constructor "
+                            + "with input parameters:\n");
+            if (argTypes != null) {
+               for (String arg : argTypes) {
+                  trHas.addOutput(arg +"\n");
+               }
+            }
+         }
+      } else {
+         trHas.setScore(0);
+         trHas.addOutput("ERROR: Unable to convert input parameters");
+      }
+      this.allTestResults.add(trHas, this.checksum);
+      return status;
+   }
+
+
+
+   /**Method to test whether a specific constructor exists.
+       This method takes in the name of the class and a list
+       of expected parameters and checks if the expected constructor exists. 
+       It then adds a TestResult of whether the constructor exists. 
+       @param className the name of the java class
+       @param argTypes the argument classes that the constructor takes in
+       @return true if the constructor exists, false otherwise
+    */
+   public boolean  hasConstructorTest(String className, 
+                              Class<?>[] argTypes) {
+      boolean status = false;
+      String testName = "";
+      if (argTypes != null) {
+         testName = className + " Constructor Exists Test  (" + argTypes.length + "  Parameters)";
+      } else {
+         testName = className + " Constructor Exists Test  (0 Parameters)";
+      }
+      TestResult trHas = new TestResult(testName,
+                                        "" + this.diffNum,
+                                        this.maxScore, this.visibility);
+      this.diffNum++;
+      Class<?> args[] = argTypes;
+      if (args != null) {
+         try {
+            Class<?> c = Class.forName(className);
+            if (c == null) {
+               trHas.setScore(0);
+               trHas.addOutput("ERROR: Class - " + className 
+                               + " does not exist");
+            } else {
+               Constructor<?> m = c.getConstructor(args);
+               if (m == null) {
+                  throw new NoSuchMethodException();
+               }
+               trHas.setScore(this.maxScore);
+               trHas.addOutput("SUCCESS: Class - " + className
+                               + "\nHas a constructor "
+                               + "with input parameters:\n");
+               if (argTypes != null && argTypes.length > 0) {
+                  for (Class<?> arg : argTypes) {
+                     trHas.addOutput(arg.getName() +"\n");
+                  }
+               }
+               status = true;
+            }
+         } catch(Exception e) {
+            trHas.setScore(0);
+            trHas.addOutput("ERROR: Class - " + className
+                            + "\nDoes not have a constructor "
+                            + "with input parameters:\n");
+            if (argTypes != null) {
+               for (Class<?> arg : argTypes) {
+                  trHas.addOutput(arg.getName() +"\n");
+               }
+            }
+         }
+      } else {
+         trHas.setScore(0);
+         trHas.addOutput("ERROR: Unable to convert input parameters");
+      }
+      this.allTestResults.add(trHas, this.checksum);
+      return status;
+   }
+
+   
+   
    
    /**
       Method to convert the string paramaters to Class{@literal <?>}[].
