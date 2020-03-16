@@ -29,7 +29,7 @@ public class AutograderMain {
       }
       for (int i = 0; i < programs.length; i++) {
          if (programs[i].exists()) {
-            gr.stdOutDiffTests(programs[i].name(), programs[i].testCount(), true, 0);
+            gr.stdOutDiffTests(programs[i].name(), programs[i].testCount(), true, false, 0);
             gr.comparisonTests(programs[i].name(), programs[i].unitCount(), null);
          }
       } 

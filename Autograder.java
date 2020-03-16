@@ -685,7 +685,7 @@ public class Autograder {
       For this method to work correctly, the sample implementation
       and the student submission should always write to the same file.
       If you need different filenames for each run, you should use
-      {@link #logFileDiffTest(String, String, String, String) logFileDiffTest}
+      {@link #logFileDiffTest(String, String, String, String, boolean) logFileDiffTest}
       with a loop to modify the filename before calling each run.
       @param name the name of the program to do diff tests on
       @param count the number of diffs to perform
@@ -707,7 +707,7 @@ public class Autograder {
       For this method to work correctly, the sample implementation
       and the student submission should always write to the same file.
       If you need different filenames for each run, you should use
-      {@link #logFileDiffTest(String, String, String, String) logFileDiffTest}
+      {@link #logFileDiffTest(String, String, String, String, boolean) logFileDiffTest}
       with a loop to modify the filename before calling each run.
       @param name the name of the program to do diff tests on
       @param count the number of diffs to perform
@@ -1016,7 +1016,6 @@ public class Autograder {
          test.addOutput("ERROR: " +  name +
                           " got interrupted");
       }
-
    }
 
 
@@ -1027,8 +1026,9 @@ public class Autograder {
       as a test. Will give no credit if either file did not exist.
       @param firstFile the filename of the first file to compare
       @param secondFile the filename of the other file to compare
+      @return true if files match, false otherwise
     */
-   public void diffFiles(String firstFile, String secondFile) {
+   public boolean diffFiles(String firstFile, String secondFile) {
       TestResult test = new TestResult("File Diff Test Between " + firstFile
                                        + " and " + secondFile,
                                             "" + this.diffNum,
@@ -1047,6 +1047,7 @@ public class Autograder {
          if (diffProcess.exitValue() == 0) {
             test.setScore(this.maxScore);
             test.addOutput("SUCCESS: The Two files Matched");
+            return true;
          }
          else { 
             test.setScore(0);
@@ -1064,6 +1065,7 @@ public class Autograder {
          test.addOutput("ERROR: Diff process got interrupted");
       }
       this.allTestResults.add(test, this.checksum);
+      return false;
    }
 
 
@@ -1360,10 +1362,12 @@ public class Autograder {
        @param programName the name of the java class
        @param methodName the name of the method
        @param argTypes the argument classes (in string form) that the method takes in
+       @return true if the method exists, false otherwise
     */
-   public void  hasMethodTest(String programName,
+   public boolean  hasMethodTest(String programName,
                               String methodName, 
                               String[] argTypes) {
+      boolean status = false;
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
                                          this.maxScore, this.visibility);
@@ -1389,6 +1393,7 @@ public class Autograder {
                      trHas.addOutput(arg +"\n");
                   }
                }
+               status = true;
             }
          } catch(Exception e) {
             trHas.setScore(0);
@@ -1406,6 +1411,7 @@ public class Autograder {
          trHas.addOutput("ERROR: Unable to convert input parameters");
       }
       this.allTestResults.add(trHas, this.checksum);
+      return status;
    }
 
 
@@ -1417,10 +1423,12 @@ public class Autograder {
        @param programName the name of the java class
        @param methodName the name of the method
        @param argTypes the argument classes (in string form) that the method takes in
+       @return true if the method exists, false otherwise
     */
-   public void  hasMethodTest(String programName,
+   public boolean  hasMethodTest(String programName,
                               String methodName, 
                               Class<?>[] argTypes) {
+      boolean status = false;
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
                                          this.maxScore, this.visibility);
@@ -1446,6 +1454,7 @@ public class Autograder {
                      trHas.addOutput(arg.getName() +"\n");
                   }
                }
+               status = true;
             }
          } catch(Exception e) {
             trHas.setScore(0);
@@ -1463,6 +1472,7 @@ public class Autograder {
          trHas.addOutput("ERROR: Unable to convert input parameters");
       }
       this.allTestResults.add(trHas, this.checksum);
+      return status;
    }
 
 
@@ -1713,9 +1723,10 @@ public class Autograder {
       @param quantity the number of methods the class needs.
       @param modifiers the Modifier that we are only looking for
       @param modify whether to use the access modifier or to look for all methods
+      @param atLeast true: as least quantity methods, false: exactly quantity methods 
       @return whether the class has enough methods
     */
-   public boolean testMethodCount(String programName, Integer quantity, int modifiers, boolean modify) {
+   public boolean testMethodCount(String programName, Integer quantity, int modifiers, boolean modify, boolean atLeast) {
       boolean passed = false;
       TestResult trMethodCount = new TestResult(programName + " Method Count", 
                                                 "" + this.diffNum , this.maxScore, this.visibility);
@@ -1750,7 +1761,7 @@ public class Autograder {
                trMethodCount.addOutput("Faliure: Class " 
                                        + programName +
                                        " is missing expected methods!");
-            } else if (count > quantity) {
+            } else if (!atLeast && count > quantity) {
                trMethodCount.setScore(0);
                trMethodCount.addOutput("Faliure: Class " 
                                        + programName +
