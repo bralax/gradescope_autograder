@@ -1354,26 +1354,164 @@ public class Autograder {
       return null;
    
    }
+   
+   /** Test to check whether a class complies with an interface.
+       This method checks that a java class has all the methods 
+       found in a provided interface. This method is particualary
+       useful in a introductory class where methods are specified but
+       students are not asked to specifcally implement certain methods.
+       This method also allows for checking constructors which an interface
+       traditionally does not allow. Just create a method that has the same
+       name as the class and any return type and this method will interpret it 
+       as a constructor. It can also check the modifiers of the method (public, private, static...). 
+       This will return false if either java files does 
+       not compile, in addition to if any method is missing.
+       @param className the java className to test
+       @param interfaceName the name of the java interface that the class must follow
+       @param matchModifiers whether to check modifiers in this test
+       @return true if all methods found, false otherwise 
+    */
+   public boolean hasMethodsTest(String className,
+                                 String interfaceName,
+                                 boolean matchModifiers) {
+      int ret = this.compile(interfaceName + ".java");
+      int ret2 = this.compile(className + ".java");
+      if (!(ret == ret2 && ret == 0)) {
+         TestResult trHas = new TestResult("Methods Exists Test For " + className,
+                                         "" + this.diffNum,
+                                         this.maxScore, this.visibility);
+         this.diffNum++;
+         trHas.setScore(0);
+         trHas.addOutput("FAILURE: Either the Java Class or Interface failed to compile.");
+         this.allTestResults.add(trHas, this.checksum);
+         return false;
+      }
+      try {
+         Class<?> clas = Class.forName(className);
+         Class<?> interfac = Class.forName(interfaceName);
+         Method[] interfaceMethods = interfac.getMethods();
+         boolean noBadMethod = true;
+         for (Method m: interfaceMethods) {
+            if (m.getName().equals(className)) {//Is a constructor
+               boolean status = this.hasConstructorTest(className,
+                                                        m.getParameterTypes(),
+                                                        m.getModifiers(),
+                                                        matchModifiers);
+               if (noBadMethod && !status) {
+                  noBadMethod = false;
+               }
+            } else {
+               boolean status = this.hasMethodTest(className,
+                                                   m.getName(),
+                                                   m.getParameterTypes(),
+                                                   m.getReturnType(),
+                                                   true,
+                                                   m.getModifiers(),
+                                                   matchModifiers);
+               if (noBadMethod && !status) {
+                  noBadMethod = false;
+               }
+            }
+         }
+         return noBadMethod;
+      } catch (Exception e) {
+         TestResult trHas = new TestResult("Methods Exists Test For " + className,
+                                         "" + this.diffNum,
+                                         this.maxScore, this.visibility);
+         this.diffNum++;
+         trHas.setScore(0);
+         trHas.addOutput("FAILURE: Either the Java Class or Interface could not be found.");
+         this.allTestResults.add(trHas, this.checksum);
+         return false;
+      }
+      
+   }
 
+   /**
+      Method to take a list of string modifiers and turn them into a representative integer.
+      Java uses integers to store information about a method/field/class's modifiers. This method
+      takes in an array of strings and turns it into its representive integer for other tests.
+      This method is Case-INSensitive. The following are possible modfiers handled by this method:
+      abstract, final, interface, native, private, protected, public, static, strict, synchronized, 
+      transient, volatile.
+      @param mods a list of modifiers needed (case-insensitive)
+      @return an integer containing the information of all the modifiers 
+    */
+   public static int getModifiers(String[] mods) {
+      if (mods == null) {
+         return 0;
+      }
+      int modifiers = 0;
+      for (String mod: mods) {
+         switch(mod.toLowerCase()) {
+         case "abstract":
+            modifiers = modifiers | Modifier.ABSTRACT;
+            break;
+         case "final":
+            modifiers = modifiers | Modifier.FINAL;
+            break;
+         case "interface":
+            modifiers = modifiers | Modifier.INTERFACE;
+            break;
+         case "native":
+            modifiers = modifiers | Modifier.NATIVE;
+            break;
+         case "private":
+            modifiers = modifiers | Modifier.PRIVATE;
+            break;
+         case "protected":
+            modifiers = modifiers | Modifier.PROTECTED;
+            break;
+         case "public":
+            modifiers = modifiers | Modifier.PUBLIC;
+            break;
+         case "static":
+            modifiers = modifiers | Modifier.STATIC;
+            break;
+         case "strict":
+            modifiers = modifiers | Modifier.STRICT;
+            break;
+         case "synchronized":
+            modifiers = modifiers | Modifier.SYNCHRONIZED;
+            break;
+         case "transient":
+            modifiers = modifiers | Modifier.TRANSIENT;
+            break;
+         case "volatile":
+            modifiers = modifiers | Modifier.VOLATILE;
+            break;
+         default:
+            break;
+         }
+      }
+      return modifiers;
+   }
+   
    /** Method to test whether a method exists.
        This method takes in the name of the method and class
        and checks if a method exists. It then adds a TestResult
        of whether the method exists.
        NOTE: Void is a TYPE. If you are checking the return
        it should never be null. To check for a void method. Pass in 
-       the string void.
+       the string void. 
+       NOTE: For modifiers, see {@link #getModifiers(String[]) getModifiers} for a list
+       of acceptable modifiers.
        @param programName the name of the java class
        @param methodName the name of the method
        @param argTypes the argument classes (in string form) that the method takes in
        @param returnType the expected return type of the method
        @param checkReturn whether to check the return type of the method
+       @param modifiers the expected modifiers for the method 
+       @param checkModifiers whether to check the modifiers of the method
        @return true if the method exists, false otherwise
     */
    public boolean  hasMethodTest(String programName,
                                  String methodName, 
                                  String[] argTypes,
                                  String returnType,
-                                 boolean checkReturn) {
+                                 boolean checkReturn,
+                                 String[] modifiers,
+                                 boolean checkModifiers) {
       boolean status = false;
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
@@ -1392,20 +1530,28 @@ public class Autograder {
                if (m == null) {
                   throw new NoSuchMethodException();
                }
+               int mods = getModifiers(modifiers);
                if (!checkReturn || getClasses((new String[]{returnType})).equals(m.getReturnType())) {
-                  trHas.setScore(this.maxScore);
-                  trHas.addOutput("SUCCESS: Class - " + programName
-                                  + "\nHas a method named: "+ methodName
-                                  + "\nWith input parameters:\n");
-                  if (argTypes != null && argTypes.length > 0) {
-                     for (String arg : argTypes) {
-                        trHas.addOutput(arg +"\n");
+                  if (!checkModifiers || mods == m.getModifiers()) {
+                     trHas.setScore(this.maxScore);
+                     trHas.addOutput("SUCCESS: Class - " + programName
+                                     + "\nHas a method named: "+ methodName
+                                     + "\nWith input parameters:\n");
+                     if (argTypes != null && argTypes.length > 0) {
+                        for (String arg : argTypes) {
+                           trHas.addOutput(arg +"\n");
+                        }
                      }
+                     if (checkReturn) {
+                        trHas.addOutput("And Return Type: " + returnType);
+                     }
+                     if (checkModifiers) {
+                        trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(mods));
+                     }
+                     status = true;
+                  } else {
+                     throw new NoSuchMethodException();
                   }
-                  if (checkReturn) {
-                     trHas.addOutput("And Return Type: " + returnType);
-                  }
-                  status = true;
                } else {
                   throw new NoSuchMethodException();
                }
@@ -1422,6 +1568,10 @@ public class Autograder {
             }
             if (checkReturn) {
                trHas.addOutput("And Return Type: " + returnType);
+            }
+            if (checkModifiers) {
+               int mods = getModifiers(modifiers);
+               trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(mods));
             }
          }
       } else {
@@ -1441,18 +1591,25 @@ public class Autograder {
        NOTE: Void is a TYPE. If you are checking the return
        it should never be null. To check for a void method. Pass in 
        void.class.
+       NOTE: For modifiers, see {@link #getModifiers(String[]) getModifiers} to 
+       easily get the desired modifiers for the method. Also See java.lang.reflect.Modifiers
+       for more information.
        @param programName the name of the java class
        @param methodName the name of the method
        @param argTypes the argument classes (in string form) that the method takes in
        @param returnType the expected return type of the method
        @param checkReturn whether to check the return type of the method
+       @param modifiers the expected modifiers for the method 
+       @param checkModifiers whether to check the modifiers of the method
        @return true if the method exists, false otherwise
     */
    public boolean  hasMethodTest(String programName,
                                  String methodName, 
                                  Class<?>[] argTypes,
                                  Class<?> returnType,
-                                 boolean checkReturn) {
+                                 boolean checkReturn,
+                                 int modifiers,
+                                 boolean checkModifiers) {
       boolean status = false;
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
@@ -1472,19 +1629,26 @@ public class Autograder {
                   throw new NoSuchMethodException();
                }
                if (!checkReturn || (returnType != null && returnType.equals(m.getReturnType()))) {
-                  trHas.setScore(this.maxScore);
-                  trHas.addOutput("SUCCESS: Class - " + programName
-                                  + "\nHas a method named: "+ methodName
-                                  + "\nWith input parameters:\n");
-                  if (argTypes != null && argTypes.length > 0) {
-                     for (Class<?> arg : argTypes) {
-                        trHas.addOutput(arg.getName() +"\n");
+                  if (!checkModifiers || modifiers == m.getModifiers()) {
+                     trHas.setScore(this.maxScore);
+                     trHas.addOutput("SUCCESS: Class - " + programName
+                                     + "\nHas a method named: "+ methodName
+                                     + "\nWith input parameters:\n");
+                     if (argTypes != null && argTypes.length > 0) {
+                        for (Class<?> arg : argTypes) {
+                           trHas.addOutput(arg.getName() +"\n");
+                        }
                      }
+                     if (checkReturn) {
+                        trHas.addOutput("And Return Type: " + returnType);
+                     }
+                     if (checkModifiers) {
+                        trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(modifiers));
+                     }
+                     status = true;
+                  } else {
+                     throw new NoSuchMethodException();
                   }
-                  if (checkReturn) {
-                     trHas.addOutput("And Return Type: " + returnType);
-                  }
-                  status = true;
                } else {
                   throw new NoSuchMethodException();
                }
@@ -1502,6 +1666,9 @@ public class Autograder {
             if (checkReturn) {
                trHas.addOutput("And Return Type: " + returnType);
             }
+            if (checkModifiers) {
+               trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(modifiers));
+            }
          }
       } else {
          trHas.setScore(0);
@@ -1517,12 +1684,18 @@ public class Autograder {
        This method takes in the name of the class and a list
        of expected parameters and checks if the expected constructor exists. 
        It then adds a TestResult of whether the constructor exists.
+       NOTE: For modifiers, see {@link #getModifiers(String[]) getModifiers} for a list
+       of acceptable modifiers.
        @param className the name of the java class
        @param argTypes the argument classes (in string form) that the constructor takes in
+       @param modifiers the expected modifiers for the method 
+       @param checkModifiers whether to check the modifiers of the method
        @return true if the constructor exists, false otherwise
     */
    public boolean hasConstructorTest(String className, 
-                              String[] argTypes) {
+                                     String[] argTypes,
+                                     String[] modifiers,
+                                     boolean checkModifiers) {
       boolean status = false;
       String testName = "";
       if (argTypes != null) {
@@ -1547,16 +1720,22 @@ public class Autograder {
                if (m == null) {
                   throw new NoSuchMethodException();
                }
-               trHas.setScore(this.maxScore);
-               trHas.addOutput("SUCCESS: Class - " + className
-                               + "\nHas a constructor "
-                               + "with input parameters:\n");
-               if (argTypes != null && argTypes.length > 0) {
-                  for (String arg : argTypes) {
-                     trHas.addOutput(arg +"\n");
+               int mods = getModifiers(modifiers);
+               if (!checkModifiers || mods == m.getModifiers()) {
+                  trHas.setScore(this.maxScore);
+                  trHas.addOutput("SUCCESS: Class - " + className
+                                  + "\nHas a constructor "
+                                  + "with input parameters:\n");
+                  if (argTypes != null && argTypes.length > 0) {
+                     for (String arg : argTypes) {
+                        trHas.addOutput(arg +"\n");
+                     }
                   }
+                  if (checkModifiers) {
+                     trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(mods));
+                  }
+                  status = true;
                }
-               status = true;
             }
          } catch(Exception e) {
             trHas.setScore(0);
@@ -1568,6 +1747,10 @@ public class Autograder {
                   trHas.addOutput(arg +"\n");
                }
             }
+            if (checkModifiers) {
+               trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(getModifiers(modifiers)));
+            }
+
          }
       } else {
          trHas.setScore(0);
@@ -1583,12 +1766,19 @@ public class Autograder {
        This method takes in the name of the class and a list
        of expected parameters and checks if the expected constructor exists. 
        It then adds a TestResult of whether the constructor exists. 
+       NOTE: For modifiers, see {@link #getModifiers(String[]) getModifiers} to 
+       easily get the desired modifiers for the method. Also See java.lang.reflect.Modifiers
+       for more information.
        @param className the name of the java class
        @param argTypes the argument classes that the constructor takes in
+       @param modifiers the expected modifiers for the method 
+       @param checkModifiers whether to check the modifiers of the method
        @return true if the constructor exists, false otherwise
     */
    public boolean  hasConstructorTest(String className, 
-                              Class<?>[] argTypes) {
+                                      Class<?>[] argTypes,
+                                      int modifiers,
+                                      boolean checkModifiers) {
       boolean status = false;
       String testName = "";
       if (argTypes != null) {
@@ -1613,16 +1803,21 @@ public class Autograder {
                if (m == null) {
                   throw new NoSuchMethodException();
                }
-               trHas.setScore(this.maxScore);
-               trHas.addOutput("SUCCESS: Class - " + className
-                               + "\nHas a constructor "
-                               + "with input parameters:\n");
-               if (argTypes != null && argTypes.length > 0) {
-                  for (Class<?> arg : argTypes) {
-                     trHas.addOutput(arg.getName() +"\n");
+               if (!checkModifiers || modifiers == m.getModifiers()) {
+                  trHas.setScore(this.maxScore);
+                  trHas.addOutput("SUCCESS: Class - " + className
+                                  + "\nHas a constructor "
+                                  + "with input parameters:\n");
+                  if (argTypes != null && argTypes.length > 0) {
+                     for (Class<?> arg : argTypes) {
+                        trHas.addOutput(arg.getName() +"\n");
+                     }
                   }
+                  if (checkModifiers) {
+                     trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(modifiers));
+                  }
+                  status = true;
                }
-               status = true;
             }
          } catch(Exception e) {
             trHas.setScore(0);
@@ -1633,6 +1828,9 @@ public class Autograder {
                for (Class<?> arg : argTypes) {
                   trHas.addOutput(arg.getName() +"\n");
                }
+            }
+            if (checkModifiers) {
+               trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(modifiers));
             }
          }
       } else {
