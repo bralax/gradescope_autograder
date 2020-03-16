@@ -2259,16 +2259,20 @@ public class Autograder {
       @param programName the name of the java class
       @param fieldName the name of the field to check for
       @param fieldType the expected type of the field. Ignored if null.
+      @param modifiers the modifiers to check for
+      @param checkModifiers whether to check the modifiers
       @return whether the class has the expected field
     */
-   public boolean hasFieldTest(String programName, String fieldName, String fieldType) {
+   public boolean hasFieldTest(String programName, String fieldName, String fieldType, String[] modifiers, boolean checkModifiers) {
       if (fieldType != null) {
          String[] field = {fieldType};
          Class<?>[] c = getClasses(field);
-         return this.hasFieldTest(programName, fieldName, c[0]);
+         int mods = checkModifiers ? getModifiers(modifiers) : 0;
+         return this.hasFieldTest(programName, fieldName, c[0], mods, checkModifiers);
       } else {
          Class<?> c = null;
-         return this.hasFieldTest(programName, fieldName, c);
+         int mods = checkModifiers ? getModifiers(modifiers) : 0;
+         return this.hasFieldTest(programName, fieldName, c, mods, checkModifiers);
       }
    }
    
@@ -2280,9 +2284,11 @@ public class Autograder {
       @param programName the name of the java class
       @param fieldName the name of the field to check for
       @param fieldType the expected type of the field. Ignored if null.
+      @param modifiers the modifiers to check for
+      @param checkModifiers whether to check the modifiers
       @return whether the class has the expected field
     */
-   public boolean hasFieldTest(String programName, String fieldName, Class<?> fieldType) {
+   public boolean hasFieldTest(String programName, String fieldName, Class<?> fieldType, int modifiers, boolean checkModifiers) {
       boolean passed = false;
       TestResult trMethodCount = new TestResult(programName + " Check for Field: " + fieldName, 
                                                 "" + this.diffNum , this.maxScore, this.visibility);
@@ -2305,11 +2311,16 @@ public class Autograder {
                trMethodCount.addOutput("Faliure: Class " 
                                        + programName +
                                        " has field " + fieldName + " with incorrect type: " + field.getType().toString());
-            } else {
+            } else if (!checkModifiers || modifiers == field.getModifiers()) {
                trMethodCount.setScore(this.maxScore);
                trMethodCount.addOutput("SUCCESS: Class " + programName +
                                        " has the expected Field");
                passed = true;
+            } else {
+               trMethodCount.setScore(0);
+               trMethodCount.addOutput("Faliure: Class " 
+                                       + programName +
+                                       " has field " + fieldName + " with incorrect Modifiers " + Modifier.toString(modifiers));
             }
          }
       } catch (ClassNotFoundException e) {
