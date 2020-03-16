@@ -1359,14 +1359,21 @@ public class Autograder {
        This method takes in the name of the method and class
        and checks if a method exists. It then adds a TestResult
        of whether the method exists.
+       NOTE: Void is a TYPE. If you are checking the return
+       it should never be null. To check for a void method. Pass in 
+       the string void.
        @param programName the name of the java class
        @param methodName the name of the method
        @param argTypes the argument classes (in string form) that the method takes in
+       @param returnType the expected return type of the method
+       @param checkReturn whether to check the return type of the method
        @return true if the method exists, false otherwise
     */
    public boolean  hasMethodTest(String programName,
-                              String methodName, 
-                              String[] argTypes) {
+                                 String methodName, 
+                                 String[] argTypes,
+                                 String returnType,
+                                 boolean checkReturn) {
       boolean status = false;
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
@@ -1385,16 +1392,23 @@ public class Autograder {
                if (m == null) {
                   throw new NoSuchMethodException();
                }
-               trHas.setScore(this.maxScore);
-               trHas.addOutput("SUCCESS: Class - " + programName
-                               + "\nHas a method named: "+ methodName
-                               + "\nWith input parameters:\n");
-               if (argTypes != null && argTypes.length > 0) {
-                  for (String arg : argTypes) {
-                     trHas.addOutput(arg +"\n");
+               if (!checkReturn || getClasses((new String[]{returnType})).equals(m.getReturnType())) {
+                  trHas.setScore(this.maxScore);
+                  trHas.addOutput("SUCCESS: Class - " + programName
+                                  + "\nHas a method named: "+ methodName
+                                  + "\nWith input parameters:\n");
+                  if (argTypes != null && argTypes.length > 0) {
+                     for (String arg : argTypes) {
+                        trHas.addOutput(arg +"\n");
+                     }
                   }
+                  if (checkReturn) {
+                     trHas.addOutput("And Return Type: " + returnType);
+                  }
+                  status = true;
+               } else {
+                  throw new NoSuchMethodException();
                }
-               status = true;
             }
          } catch(Exception e) {
             trHas.setScore(0);
@@ -1405,6 +1419,9 @@ public class Autograder {
                for (String arg : argTypes) {
                   trHas.addOutput(arg +"\n");
                }
+            }
+            if (checkReturn) {
+               trHas.addOutput("And Return Type: " + returnType);
             }
          }
       } else {
@@ -1421,14 +1438,21 @@ public class Autograder {
        This method takes in the name of the method and class
        and checks if a method exists. It then adds a TestResult
        of whether the method exists.
+       NOTE: Void is a TYPE. If you are checking the return
+       it should never be null. To check for a void method. Pass in 
+       void.class.
        @param programName the name of the java class
        @param methodName the name of the method
        @param argTypes the argument classes (in string form) that the method takes in
+       @param returnType the expected return type of the method
+       @param checkReturn whether to check the return type of the method
        @return true if the method exists, false otherwise
     */
    public boolean  hasMethodTest(String programName,
-                              String methodName, 
-                              Class<?>[] argTypes) {
+                                 String methodName, 
+                                 Class<?>[] argTypes,
+                                 Class<?> returnType,
+                                 boolean checkReturn) {
       boolean status = false;
       TestResult trHas = new TestResult("Method Exists Test " + methodName,
                                          "" + this.diffNum,
@@ -1447,16 +1471,23 @@ public class Autograder {
                if (m == null) {
                   throw new NoSuchMethodException();
                }
-               trHas.setScore(this.maxScore);
-               trHas.addOutput("SUCCESS: Class - " + programName
-                               + "\nHas a method named: "+ methodName
-                               + "\nWith input parameters:\n");
-               if (argTypes != null && argTypes.length > 0) {
-                  for (Class<?> arg : argTypes) {
-                     trHas.addOutput(arg.getName() +"\n");
+               if (!checkReturn || (returnType != null && returnType.equals(m.getReturnType()))) {
+                  trHas.setScore(this.maxScore);
+                  trHas.addOutput("SUCCESS: Class - " + programName
+                                  + "\nHas a method named: "+ methodName
+                                  + "\nWith input parameters:\n");
+                  if (argTypes != null && argTypes.length > 0) {
+                     for (Class<?> arg : argTypes) {
+                        trHas.addOutput(arg.getName() +"\n");
+                     }
                   }
+                  if (checkReturn) {
+                     trHas.addOutput("And Return Type: " + returnType);
+                  }
+                  status = true;
+               } else {
+                  throw new NoSuchMethodException();
                }
-               status = true;
             }
          } catch(Exception e) {
             trHas.setScore(0);
@@ -1467,6 +1498,9 @@ public class Autograder {
                for (Class<?> arg : argTypes) {
                   trHas.addOutput(arg.getName() +"\n");
                }
+            }
+            if (checkReturn) {
+               trHas.addOutput("And Return Type: " + returnType);
             }
          }
       } else {

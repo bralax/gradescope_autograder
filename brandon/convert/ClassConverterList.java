@@ -29,6 +29,7 @@ public class ClassConverterList implements Iterable<ClassConverter> {
       this.allConversions.add(new BoolArrayConverter());
       this.allConversions.add(new BooleanArrayConverter());
       this.allConversions.add(new IntegerConverter());
+      this.allConversions.add(new VoidConverter());
    }
 
    public void add(ClassConverter c) {
