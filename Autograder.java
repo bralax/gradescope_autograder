@@ -990,6 +990,7 @@ public class Autograder {
          String line;
          while ((line = reader.readLine()) != null) {
             sb.append(line);
+            sb.append("\n");
          }
          String result = sb.toString();
          diffProcess.waitFor();
