@@ -45,7 +45,7 @@ go_there
 # Compile sample code               #
 #####################################
 echo "COMPILING AUTOGRADER CODE..."
-javac -classpath junit/junit-4.13-beta-2.jar:checkstyle/checkstyle-8.28.1-all.jar:. AutograderMain.java
+javac -classpath junit/junit-4.13-beta-2.jar:checkstyle/checkstyle-8.28-all.jar:. AutograderMain.java
 javac ${prgs[0]}Sample.java
 come_back
 

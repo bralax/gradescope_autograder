@@ -6,6 +6,8 @@ import java.util.Random;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -171,6 +173,7 @@ public class Autograder {
       
       System.out.println("{" + String.join(",", new String[] {
                String.format("\"tests\": [%s]", testsJSON)}) + "}");
+      System.exit(0);
    }
 
    /** This is the wrap-up code of the autograder.
@@ -193,6 +196,7 @@ public class Autograder {
       pw.println("{" + String.join(",", new String[] {
                String.format("\"tests\": [%s]", testsJSON)}) + "}");
       pw.close();
+      System.exit(0);
    }
 
    
@@ -390,10 +394,11 @@ public class Autograder {
       {program_Name}_#.expected
       @param name the name of the program to do diff tests on
       @param count the number of diffs to perform
-      @param sampleFile true if using a sample program false if just comparing to a file. 
+      @param sampleFile true if using a sample program false if just comparing to a file.
+      @param ignoreWhitespace true if want to ignore whitespace false otherwise
    */
-   public void stdOutDiffTests(String name, int count, boolean sampleFile) {
-      this.stdOutDiffTests(name, count, sampleFile, 0);
+   public void stdOutDiffTests(String name, int count, boolean sampleFile, boolean ignoreWhitespace) {
+      this.stdOutDiffTests(name, count, sampleFile, ignoreWhitespace, 0);
    }
 
    /**
@@ -411,9 +416,10 @@ public class Autograder {
       @param name the name of the program to do diff tests on
       @param count the number of diffs to perform
       @param sampleFile true if using a sample program false if just comparing to a file.
+      @param ignoreWhitespace true if want to ignore whitespace false otherwise
       @param numVisible The number of tests that should be visible instead of what visibility is set to (count - numVisible) = numHidden
    */
-   public void stdOutDiffTests(String name, int count, boolean sampleFile, int numVisible) {
+   public void stdOutDiffTests(String name, int count, boolean sampleFile, boolean ignoreWhitespace, int numVisible) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       if (sampleFile) {
@@ -426,7 +432,7 @@ public class Autograder {
          if (i >= numVisible) {
             this.visibility = visible;
          }
-         TestResult trDiff = new TestResult(name + " Diff Test #" + i,
+         TestResult trDiff = new TestResult(name + " Standard Output Diff Test #" + i,
                                             "" + this.diffNum,
                                             this.maxScore, this.visibility);
          this.diffNum++;
@@ -461,7 +467,7 @@ public class Autograder {
             this.runMethodWithTimeout(main, null, ((Object)strings));
             out.flush();
             out.close();
-            diffFiles(trDiff, name, exOut, acOut);
+            diffFiles(trDiff, name, exOut, acOut, ignoreWhitespace);
          } catch (IOException e) {
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: " + name + 
@@ -521,7 +527,7 @@ public class Autograder {
                }
             }
             if (es instanceof ExitTrappedException) {
-               diffFiles(trDiff, name, exOut, acOut);
+               diffFiles(trDiff, name, exOut, acOut, ignoreWhitespace);
             } else {
             String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
@@ -552,21 +558,22 @@ public class Autograder {
       @param name the name of the java program to do diff tests on
       @param inFile the name of the test input file to use without an extension
       @param sampleFile true if using a sample program false if just comparing to a file.
+      @param ignoreWhitespace true if want to ignore whitespace false otherwise
    */
-   public void stdOutDiffTest(String name, String inFile, boolean sampleFile) {
+   public void stdOutDiffTest(String name, String inFile, boolean sampleFile, boolean ignoreWhitespace) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       if (sampleFile) {
          this.compile(name+"Sample.java");
       }
       Math.resetRandom();
-      TestResult trDiff = new TestResult(name + " Diff Test " + inFile,
+      TestResult trDiff = new TestResult(name + " Standard Output Diff Test For " + inFile,
                                          "" + this.diffNum,
                                          this.maxScore, this.visibility);
       this.diffNum++;
-      String input = sampleFile + ".in";
-      String exOut = sampleFile + ".expected";
-      String acOut = sampleFile + ".out";
+      String input = inFile + ".in";
+      String exOut = inFile + ".expected";
+      String acOut = inFile + ".out";
       try {
          File exfile = new File(exOut);
          File infile = new File(input);
@@ -595,7 +602,7 @@ public class Autograder {
          this.runMethodWithTimeout(main, null, ((Object)strings));
          out.flush();
          out.close();
-         diffFiles(trDiff, name, exOut, acOut);
+         diffFiles(trDiff, name, exOut, acOut, ignoreWhitespace);
       } catch (IOException e) {
          trDiff.setScore(0);
          trDiff.addOutput("ERROR: " + name + 
@@ -655,7 +662,7 @@ public class Autograder {
             }
          }
          if (es instanceof ExitTrappedException) {
-            diffFiles(trDiff, name, exOut, acOut);
+            diffFiles(trDiff, name, exOut, acOut, ignoreWhitespace);
          } else {
             String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
@@ -684,10 +691,11 @@ public class Autograder {
       @param count the number of diffs to perform
       @param logFile the filename of the file the students code writes to and should be compared
       @param sampleLogFile the filename that the sample code writes to and should be used for comparison
+      @param ignoreWhitespace true if want to ignore whitespace false otherwise
    */
    public void logFileDiffTests(String name, int count, String logFile,
-                                String sampleLogFile) {
-      this.logFileDiffTests(name, count, 0, logFile, sampleLogFile);
+                                String sampleLogFile, boolean ignoreWhitespace) {
+      this.logFileDiffTests(name, count, 0, logFile, sampleLogFile, ignoreWhitespace);
    }
 
    
@@ -706,9 +714,10 @@ public class Autograder {
       @param numVisible The number of tests that should be shown to students (count - numVisible) = numHidden
       @param logFile the filename of the file the students code writes to and should be compared
       @param sampleLogFile the filename that the sample code writes to and should be used for comparison
+      @param ignoreWhitespace true if want to ignore whitespace false otherwise
    */
    public void logFileDiffTests(String name, int count, int numVisible, String logFile,
-                                String sampleLogFile) {
+                                String sampleLogFile, boolean ignoreWhitespace) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       this.compile(name+"Sample.java");
@@ -754,7 +763,7 @@ public class Autograder {
             this.runMethodWithTimeout(main, null, ((Object)strings));
             out.flush();
             out.close();
-            diffFiles(trDiff, name, sampleLogFile, logFile);
+            diffFiles(trDiff, name, sampleLogFile, logFile, ignoreWhitespace);
          } catch (IOException e) {
             trDiff.setScore(0);
             trDiff.addOutput("ERROR: " + name + 
@@ -814,7 +823,7 @@ public class Autograder {
                }
             }
             if (es instanceof ExitTrappedException) {
-               diffFiles(trDiff, name, "logsample.txt", "log.txt");
+               diffFiles(trDiff, name, sampleLogFile, logFile, ignoreWhitespace);
             } else {
             String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
@@ -842,17 +851,18 @@ public class Autograder {
       @param logFile the filename of the file the students code writes to and should be compared
       @param sampleLogFile the filename that the sample code writes to and should be used for comparison
       @param inFile the name of the test input file to use without an extension
+      @param ignoreWhitespace true if want to ignore whitespace false otherwise
    */
    public void logFileDiffTest(String name, String logFile, String sampleLogFile,
-                               String inFile) {
+                               String inFile, boolean ignoreWhitespace) {
       PrintStream originalOut = System.out;
       InputStream originalIn = System.in;
       this.compile(name+"Sample.java");
-      TestResult trDiff = new TestResult(name + " Diff Test " + inFile,
+      Math.resetRandom();
+      TestResult trDiff = new TestResult(name + " Log File Diff Test For " + inFile,
                                          "" + this.diffNum,
                                          this.maxScore, this.visibility);
       this.diffNum++;
-      Math.resetRandom();
       String input = inFile + ".in";
       String exOut = inFile + ".expected";
       String acOut = inFile + ".out";
@@ -884,7 +894,7 @@ public class Autograder {
          this.runMethodWithTimeout(main, null, ((Object)strings));
          out.flush();
          out.close();
-         diffFiles(trDiff, name, sampleLogFile, logFile);
+         diffFiles(trDiff, name, sampleLogFile, logFile, ignoreWhitespace);
       } catch (IOException e) {
          trDiff.setScore(0);
          trDiff.addOutput("ERROR: " + name + 
@@ -944,7 +954,7 @@ public class Autograder {
             }
          }
          if (es instanceof ExitTrappedException) {
-            diffFiles(trDiff, name, "logsample.txt", "log.txt");
+            diffFiles(trDiff, name, sampleLogFile, logFile, ignoreWhitespace);
          } else {
             String sStackTrace = stackTraceToString(es);
             trDiff.setScore(0);
@@ -961,17 +971,28 @@ public class Autograder {
 
    
 
-   private void diffFiles(TestResult test, String name, String exOut, String acOut) {
+   private void diffFiles(TestResult test, String name, String exOut, String acOut, boolean ignoreWhitespace) {
       try {
 
-         String[] procDiff = {"diff", exOut, acOut, "-y", 
-                                    "--width=175", "-t" };
+         String[] procDiff; 
+                              //"-t" };
+         if (ignoreWhitespace) {
+            procDiff = new String[]{"diff", exOut, acOut, "-y", "-w", 
+                               "--width=175", "-t" };
+         } else {
+            procDiff = new String[]{"diff", exOut, acOut, "-y", 
+                               "--width=175", "-t" };
+         }
          ProcessBuilder pbDiff = new ProcessBuilder(procDiff);
          Process diffProcess = pbDiff.start();
+         StringBuilder sb = new StringBuilder();
+         BufferedReader reader = new BufferedReader(new InputStreamReader(diffProcess.getInputStream()));
+         String line;
+         while ((line = reader.readLine()) != null) {
+            sb.append(line);
+         }
+         String result = sb.toString();
          diffProcess.waitFor();
-         Scanner s = new Scanner(diffProcess.getInputStream())
-            .useDelimiter("\\A");
-         String result = s.hasNext() ? s.next() : "";
          if (diffProcess.exitValue() == 0) {
             test.setScore(this.maxScore);
             test.addOutput("SUCCESS: " + name +
