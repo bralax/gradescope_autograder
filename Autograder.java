@@ -1367,6 +1367,8 @@ public class Autograder {
        as a constructor. It can also check the modifiers of the method (public, private, static...). 
        This will return false if either java files does 
        not compile, in addition to if any method is missing.
+       NOTE: Static methods in an interface have to have a method body to compile.
+       Give them a small body. This method will ignore anything in that body.
        @param className the java className to test
        @param interfaceName the name of the java interface that the class must follow
        @param matchModifiers whether to check modifiers in this test
