@@ -1636,12 +1636,13 @@ public class Autograder {
                                      + "\nHas a method named: "+ methodName
                                      + "\nWith input parameters:\n");
                      if (argTypes != null && argTypes.length > 0) {
-                        for (Class<?> arg : argTypes) {
-                           trHas.addOutput(arg.getName() +"\n");
+                        String[] strArgs = getStringsForClasses(argTypes);
+                        for (String arg : strArgs) {
+                           trHas.addOutput(arg +"\n");
                         }
                      }
                      if (checkReturn) {
-                        trHas.addOutput("And Return Type: " + returnType);
+                        trHas.addOutput("And Return Type: " + getStringForClass(returnType));
                      }
                      if (checkModifiers) {
                         trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(modifiers));
@@ -1660,12 +1661,13 @@ public class Autograder {
                             + "\nDoes not have a method named: "+ methodName
                             + "\nWith input parameters:\n");
             if (argTypes != null) {
-               for (Class<?> arg : argTypes) {
-                  trHas.addOutput(arg.getName() +"\n");
+               String[] strArgs = getStringsForClasses(argTypes);
+               for (String arg : strArgs) {
+                  trHas.addOutput(arg +"\n");
                }
             }
             if (checkReturn) {
-               trHas.addOutput("And Return Type: " + returnType);
+               trHas.addOutput("And Return Type: " + getStringForClass(returnType));
             }
             if (checkModifiers) {
                trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(modifiers));
@@ -1810,8 +1812,9 @@ public class Autograder {
                                   + "\nHas a constructor "
                                   + "with input parameters:\n");
                   if (argTypes != null && argTypes.length > 0) {
-                     for (Class<?> arg : argTypes) {
-                        trHas.addOutput(arg.getName() +"\n");
+                     String[] strArgs = getStringsForClasses(argTypes);
+                     for (String arg : strArgs) {
+                        trHas.addOutput(arg +"\n");
                      }
                   }
                   if (checkModifiers) {
@@ -1826,8 +1829,9 @@ public class Autograder {
                             + "\nDoes not have a constructor "
                             + "with input parameters:\n");
             if (argTypes != null) {
-               for (Class<?> arg : argTypes) {
-                  trHas.addOutput(arg.getName() +"\n");
+               String[] strArgs = getStringsForClasses(argTypes);
+               for (String arg : strArgs) {
+                  trHas.addOutput(arg +"\n");
                }
             }
             if (checkModifiers) {
@@ -1870,6 +1874,35 @@ public class Autograder {
       }
    }
 
+   private static String[] getStringsForClasses(Class<?>[] args) {
+      if (args != null) {
+         int argsCount = args.length;
+         String[] ins = new String[argsCount];
+         for (int j = 0; j < argsCount; j++) {
+            Class<?> inputop = args[j];
+            ins[j] = findConverterForObject(inputop).getString();
+         }
+         return ins;
+      } else {
+         String[] ins = {};
+         return ins;
+      }
+
+   }
+
+   private static String getStringForClass(Class<?> args) {
+      if (args != null) {
+         Class<?> inputop = args;
+         String ins = findConverterForObject(inputop).getString();
+         return ins;
+      } else {
+         String ins = "";
+         return ins;
+      }
+
+   }
+
+   
 /**
       Runs all the comparison tests for a specific file.
       A comparison test is similar to a {@link #compTest(String, Method, Object, Object, String, Object...) compTest}
