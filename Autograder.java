@@ -988,8 +988,8 @@ public class Autograder {
          StringBuilder sb = new StringBuilder();
          BufferedReader reader = new BufferedReader(new InputStreamReader(diffProcess.getInputStream()));
          String line;
-         while ((line = reader.readLine()) != null) {
-            sb.append(line);
+         while ((line = reader.readLine()) != null) { 
+            sb.append(line.replace(" \\ ", " \\\\ "));
             sb.append("\n");
          }
          String result = sb.toString();
@@ -1328,7 +1328,7 @@ public class Autograder {
          if (c == null) {
             throw new ClassNotFoundException();
          }
-         Method m = c.getMethod(methodName, paramTypes);
+         Method m = c.getDeclaredMethod(methodName, paramTypes);
          return m;
       } catch(Exception e) {
          return null;
@@ -1367,8 +1367,6 @@ public class Autograder {
        as a constructor. It can also check the modifiers of the method (public, private, static...). 
        This will return false if either java files does 
        not compile, in addition to if any method is missing.
-       NOTE: Static methods in an interface have to have a method body to compile.
-       Give them a small body. This method will ignore anything in that body.
        @param className the java className to test
        @param interfaceName the name of the java interface that the class must follow
        @param matchModifiers whether to check modifiers in this test
@@ -1392,7 +1390,7 @@ public class Autograder {
       try {
          Class<?> clas = Class.forName(className);
          Class<?> interfac = Class.forName(interfaceName);
-         Method[] interfaceMethods = interfac.getMethods();
+         Method[] interfaceMethods = interfac.getDeclaredMethods();
          boolean noBadMethod = true;
          for (Method m: interfaceMethods) {
             if (m.getName().equals(className)) {//Is a constructor
@@ -1529,12 +1527,13 @@ public class Autograder {
                trHas.addOutput("ERROR: Class - " + programName 
                                + " does not exist");
             } else {
-               Method m = c.getMethod(methodName, args);
+               Method m = c.getDeclaredMethod(methodName, args);
                if (m == null) {
                   throw new NoSuchMethodException();
                }
                int mods = getModifiers(modifiers);
-               if (!checkReturn || getClasses((new String[]{returnType})).equals(m.getReturnType())) {
+               Class<?>[] classes = getClasses((new String[]{returnType}));
+               if (!checkReturn || classes.length == 0 || classes[0].equals(m.getReturnType())) {
                   if (!checkModifiers || mods == m.getModifiers()) {
                      trHas.setScore(this.maxScore);
                      trHas.addOutput("SUCCESS: Class - " + programName
