@@ -117,7 +117,14 @@ If you need another test, reach out and it could be added in the future.
    2. Students that make more random number than expected (like calling ```rand.nextInt(10) + rand.nextInt(10)``` instead of ```rand.nextInt(20)```)
 
    See the ModifySubmission.java file in the examples folder for a sample of how to add the imports after a student uploads their submission. I would reccomend modifying the code after running a checkstyle test. Checkstyle takes off for unnecessary imports and a student submission most likely wont use both Random() and Math.random(). 
-      
+
+## Multiple Scanners
+One of the most frustrating issues that often happen in intro programming classes, is when students make multiple scanners connected to System.in. When they run their code everything works fine but when it comes time to grade it, nothing works as expected. This library includes a way to fix this issue from occuring. You will just have to replace the normal import of Scanner.
+   ```java
+   remove: import java.util.Scanner;
+   insert: import brandon.util.Scanner; 
+   ```
+I would reccomend making a small java script to overwrite the file with this change in the autograder. This version of the scanner class wraps the built-in class and only allows one unique scanner connected to System.in at a time.         
 ## TODO
    * Picture diff tests need give back better output on a runtime exception
    * Alllowing for checkstyle to ignore the first instance of a specified test

@@ -1,6 +1,6 @@
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Scanner; 
+//import java.util.Scanner; 
 import java.util.Random;
 
 import java.io.File;
@@ -47,7 +47,7 @@ import jh61b.grader.TestResultList;
 import brandon.math.Math;
 import brandon.convert.ClassConverter;
 import brandon.convert.ClassConverterList;
-
+//import brandon.util.Scanner;
 
 /**
    Classs representing an autograder.
@@ -323,7 +323,7 @@ public class Autograder {
             programName + ".java";
          Process check = Runtime.getRuntime().exec(proc);
          check.waitFor();  
-         Scanner s = new Scanner(check.getInputStream()).useDelimiter("\\A");
+         java.util.Scanner s = new java.util.Scanner(check.getInputStream()).useDelimiter("\\A");
          result = s.hasNext() ? s.next() : "";
          //no problems reported in checkstylefile; it passed checkstyle
          if (result.equals("Starting audit...\nAudit done.\n")) {
@@ -1042,7 +1042,7 @@ public class Autograder {
          ProcessBuilder pbDiff = new ProcessBuilder(procDiff);
          Process diffProcess = pbDiff.start();
          diffProcess.waitFor();
-         Scanner s = new Scanner(diffProcess.getInputStream())
+         java.util.Scanner s = new java.util.Scanner(diffProcess.getInputStream())
             .useDelimiter("\\A");
          String result = s.hasNext() ? s.next() : "";
          if (diffProcess.exitValue() == 0) {
@@ -1928,9 +1928,9 @@ public class Autograder {
       for (int i = 0; i < testCount; i++) {
          String input = programName + "_Comp_" + i + ".in";
          String result;
-         Scanner s;
+         java.util.Scanner s;
          try {
-            s = new Scanner(new FileReader(input));
+            s = new java.util.Scanner(new FileReader(input));
          } catch (FileNotFoundException e) {
             return;
          }
@@ -2012,9 +2012,9 @@ public class Autograder {
          }));
       this.compile(programName+"Sample.java");
       String result;
-      Scanner s;
+      java.util.Scanner s;
       try {
-         s = new Scanner(new FileReader(input));
+         s = new java.util.Scanner(new FileReader(input));
       } catch (FileNotFoundException e) {
          return;
       }
@@ -2389,9 +2389,9 @@ public class Autograder {
       this.diffNum++;
       String input = name + ".java";
       String result;
-      Scanner s;
+      java.util.Scanner s;
       try {
-         s = new Scanner(new FileReader(input));
+         s = new java.util.Scanner(new FileReader(input));
       } catch (FileNotFoundException e) {
          trArrayList.setScore(0);
          trArrayList.addOutput("Test failed to open file "+input);
@@ -2437,9 +2437,9 @@ public class Autograder {
       this.diffNum++;
       String input = name + ".java";
       String result;
-      Scanner s;
+      java.util.Scanner s;
       try {
-         s = new Scanner(new FileReader(input));
+         s = new java.util.Scanner(new FileReader(input));
       } catch (FileNotFoundException e) {
          trArrayList.setScore(0);
          trArrayList.addOutput("Test failed to open file "+input);
@@ -2481,9 +2481,9 @@ public class Autograder {
       this.diffNum++;
       String input = this.classNameToFileName(name, true);
       String result;
-      Scanner s;
+      java.util.Scanner s;
       try {
-         s = new Scanner(new FileReader(input));
+         s = new java.util.Scanner(new FileReader(input));
       } catch (FileNotFoundException e) {
          trArrayList.setScore(0);
          trArrayList.addOutput("Test failed to open file "+input);
@@ -2494,7 +2494,7 @@ public class Autograder {
       while(s.hasNextLine()) {
          lineNum++;
          String out = s.nextLine();
-         Scanner line = new Scanner(out);
+         java.util.Scanner line = new java.util.Scanner(out);
          if (line.hasNext() && line.next().equals("package") && out.split(" ").length == 2) {
             int curPoints = 0;
             for (TestResult t : this.allTestResults.toArray(this.checksum)) {
@@ -2530,6 +2530,7 @@ public class Autograder {
    }
 
    public Object runMethodWithTimeout(Method m, Object caller, Object... args) throws TimeoutException, ExecutionException, InterruptedException, IllegalAccessException, InvocationTargetException {
+      brandon.util.Scanner.resetSystemIn();
       FutureTask<Object> timeoutTask = new FutureTask<Object>(new CallableMethod(m, caller, args));
       Thread th = new Thread(timeoutTask);
       th.start();
