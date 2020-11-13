@@ -1626,7 +1626,7 @@ public class Autograder {
                trHas.addOutput("ERROR: Class - " + programName 
                                + " does not exist");
             } else {
-               Method m = c.getMethod(methodName, args);
+               Method m = c.getDeclaredMethod(methodName, args);
                if (m == null) {
                   throw new NoSuchMethodException();
                }
@@ -1683,6 +1683,209 @@ public class Autograder {
    }
 
 
+   /** Method to test whether a overriden method exists.
+       This method takes in the name of the method and class
+       and checks if the class overrides a method. It then adds a TestResult
+       of whether the method exists.
+       NOTE: Void is a TYPE. If you are checking the return
+       it should never be null. To check for a void method. Pass in 
+       void.class.
+       NOTE: For modifiers, see {@link #getModifiers(String[]) getModifiers} to 
+       easily get the desired modifiers for the method. Also See java.lang.reflect.Modifiers
+       for more information.
+       @param programName the name of the java class
+       @param methodName the name of the method
+       @param argTypes the argument classes (in string form) that the method takes in
+       @param returnType the expected return type of the method
+       @param checkReturn whether to check the return type of the method
+       @param modifiers the expected modifiers for the method 
+       @param checkModifiers whether to check the modifiers of the method
+       @return true if the method exists, false otherwise
+    */
+   public boolean  hasOverriddenMethodTest(String programName,
+                                 String methodName, 
+                                 Class<?>[] argTypes,
+                                 Class<?> returnType,
+                                 boolean checkReturn,
+                                 int modifiers,
+                                 boolean checkModifiers) {
+      boolean status = false;
+      TestResult trHas = new TestResult("Overridden Method Exists Test " + methodName,
+                                         "" + this.diffNum,
+                                         this.maxScore, this.visibility);
+      this.diffNum++;
+      Class<?> args[] = argTypes;
+      if (args != null) {
+         try {
+            Class<?> c = Class.forName(programName);
+            if (c == null) {
+               trHas.setScore(0);
+               trHas.addOutput("ERROR: Class - " + programName 
+                               + " does not exist");
+            } else {
+               Method m = c.getMethod(methodName, args);
+               if (m == null) {
+                  throw new NoSuchMethodException();
+               }
+               if (!checkReturn || (returnType != null && returnType.equals(m.getReturnType()))) {
+                  if (!checkModifiers || modifiers == m.getModifiers()) {
+                     if (m.getDeclaringClass().equals(c)) {
+                        trHas.setScore(this.maxScore);
+                        trHas.addOutput("SUCCESS: Class - " + programName
+                                        + "\nHas a method named: "+ methodName
+                                        + "\nWith input parameters:\n");
+                        if (argTypes != null && argTypes.length > 0) {
+                           String[] strArgs = getStringsForClasses(argTypes);
+                           for (String arg : strArgs) {
+                              trHas.addOutput(arg +"\n");
+                           }
+                        }
+                        if (checkReturn) {
+                           trHas.addOutput("And Return Type: " + getStringForClass(returnType));
+                        }
+                        if (checkModifiers) {
+                           trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(modifiers));
+                        }
+                        status = true;
+                     } else {
+                        throw new NoSuchMethodException();
+                     }
+                  } else {
+                     throw new NoSuchMethodException();
+                  }
+               } else {
+                  throw new NoSuchMethodException();
+               }
+            }
+         } catch(Exception e) {
+            trHas.setScore(0);
+            trHas.addOutput("ERROR: Class - " + programName
+                            + "\nDoes not have a method named: "+ methodName
+                            + "\nWith input parameters:\n");
+            if (argTypes != null) {
+               String[] strArgs = getStringsForClasses(argTypes);
+               for (String arg : strArgs) {
+                  trHas.addOutput(arg +"\n");
+               }
+            }
+            if (checkReturn) {
+               trHas.addOutput("And Return Type: " + getStringForClass(returnType));
+            }
+            if (checkModifiers) {
+               trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(modifiers));
+            }
+         }
+      } else {
+         trHas.setScore(0);
+         trHas.addOutput("ERROR: Unable to convert input parameters");
+      }
+      this.allTestResults.add(trHas, this.checksum);
+      return status;
+   }
+
+   /** Method to test whether an overriden method exists.
+       This method takes in the name of the method and class
+       and checks if the class overrides a method. It then adds a TestResult
+       of whether the method exists.
+       NOTE: Void is a TYPE. If you are checking the return
+       it should never be null. To check for a void method. Pass in 
+       the string void. 
+       NOTE: For modifiers, see {@link #getModifiers(String[]) getModifiers} for a list
+       of acceptable modifiers.
+       @param programName the name of the java class
+       @param methodName the name of the method
+       @param argTypes the argument classes (in string form) that the method takes in
+       @param returnType the expected return type of the method
+       @param checkReturn whether to check the return type of the method
+       @param modifiers the expected modifiers for the method 
+       @param checkModifiers whether to check the modifiers of the method
+       @return true if the method exists, false otherwise
+    */
+   public boolean  hasOverriddenMethodTest(String programName,
+                                 String methodName, 
+                                 String[] argTypes,
+                                 String returnType,
+                                 boolean checkReturn,
+                                 String[] modifiers,
+                                 boolean checkModifiers) {
+      boolean status = false;
+      TestResult trHas = new TestResult("Overriden Method Exists Test " + methodName,
+                                         "" + this.diffNum,
+                                         this.maxScore, this.visibility);
+      this.diffNum++;
+      Class<?> args[] = getClasses(argTypes);
+      if (args != null) {
+         try {
+            Class<?> c = Class.forName(programName);
+            if (c == null) {
+               trHas.setScore(0);
+               trHas.addOutput("ERROR: Class - " + programName 
+                               + " does not exist");
+            } else {
+               Method m = c.getDeclaredMethod(methodName, args);
+               if (m == null) {
+                  throw new NoSuchMethodException();
+               }
+               int mods = getModifiers(modifiers);
+               Class<?>[] classes = getClasses((new String[]{returnType}));
+               if (!checkReturn || classes.length == 0 || classes[0].equals(m.getReturnType())) {
+                  if (!checkModifiers || mods == m.getModifiers()) {
+                     if (m.getDeclaringClass().equals(c)) {
+                        trHas.setScore(this.maxScore);
+                        trHas.addOutput("SUCCESS: Class - " + programName
+                                        + "\nHas a method named: "+ methodName
+                                        + "\nWith input parameters:\n");
+                        if (argTypes != null && argTypes.length > 0) {
+                           for (String arg : argTypes) {
+                              trHas.addOutput(arg +"\n");
+                           }
+                        }
+                        if (checkReturn) {
+                           trHas.addOutput("And Return Type: " + returnType);
+                        }
+                        if (checkModifiers) {
+                           trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(mods));
+                        }
+                        status = true;
+                     } else {
+                        throw new NoSuchMethodException();
+                     }
+                  } else {
+                     throw new NoSuchMethodException();
+                  }
+               } else {
+                  throw new NoSuchMethodException();
+               }
+            }
+         } catch(Exception e) {
+            trHas.setScore(0);
+            trHas.addOutput("ERROR: Class - " + programName
+                            + "\nDoes not have a method named: "+ methodName
+                            + "\nWith input parameters:\n");
+            if (argTypes != null) {
+               for (String arg : argTypes) {
+                  trHas.addOutput(arg +"\n");
+               }
+            }
+            if (checkReturn) {
+               trHas.addOutput("And Return Type: " + returnType);
+            }
+            if (checkModifiers) {
+               int mods = getModifiers(modifiers);
+               trHas.addOutput("\nAnd Modifiers: " + Modifier.toString(mods));
+            }
+         }
+      } else {
+         trHas.setScore(0);
+         trHas.addOutput("ERROR: Unable to convert input parameters");
+      }
+      this.allTestResults.add(trHas, this.checksum);
+      return status;
+   }
+
+   
+
+   
 
    /** Method to test whether a specific constructor exists.
        This method takes in the name of the class and a list
