@@ -126,5 +126,5 @@ One of the most frustrating issues that often happen in intro programming classe
    ```
 I would reccomend making a small java script to overwrite the file with this change in the autograder. This version of the scanner class wraps the built-in class and only allows one unique scanner connected to System.in at a time.         
 ## TODO
-   * Picture diff tests need give back better output on a runtime exception
-   * Alllowing for checkstyle to ignore the first instance of a specified test
+   * Picture diff tests should give back better output on a runtime exception
+   * Alllow for checkstyle to ignore the first instance of a specified test (freebies)
